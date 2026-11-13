@@ -95,13 +95,22 @@
 
         <!-- Action Buttons (No Print) -->
         <div class="no-print grid grid-cols-2 gap-3">
-            <button type="button" onclick="handlePrint()"
-                class="py-3 px-4 rounded-2xl bg-[#262017] hover:bg-[#15120c] active:scale-95 text-white font-extrabold text-xs shadow-md transition flex items-center justify-center gap-2 cursor-pointer">
-                <svg class="w-4 h-4 text-[#c59b27]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
-                </svg>
-                <span>Cetak Struk</span>
-            </button>
+            <div class="flex items-center gap-1.5">
+                <button type="button" onclick="handlePrint()"
+                    class="flex-1 py-3 px-3 rounded-2xl bg-[#262017] hover:bg-[#15120c] active:scale-95 text-white font-extrabold text-xs shadow-md transition flex items-center justify-center gap-2 cursor-pointer">
+                    <svg class="w-4 h-4 text-[#c59b27]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                    </svg>
+                    <span>Cetak Struk</span>
+                </button>
+                <button type="button" onclick="openPrintModeModal()" title="Pilihan Tipe Printer (Bluetooth / USB)"
+                    class="py-3 px-2.5 rounded-2xl bg-white hover:bg-slate-50 border border-slate-200 text-slate-400 hover:text-slate-600 shadow-xs transition cursor-pointer">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                </button>
+            </div>
 
             <a href="{{ route('kiosk.index') }}"
                 class="py-3 px-4 rounded-2xl bg-[#c59b27] hover:bg-[#a87f1c] active:scale-95 text-stone-950 font-black text-xs shadow-md transition flex items-center justify-center gap-2">
@@ -461,32 +470,156 @@
             }
         }
 
-        async function handlePrint() {
-            const isMobile = /Android|iPhone|iPad|iPod|webOS|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        function openPrintModeModal() {
+            const modal = document.getElementById('printModeModal');
+            if (modal) modal.classList.remove('hidden');
+        }
 
-            // Jika dibuka dari HP / Tablet Android dengan browser yang mendukung Web Bluetooth (Chrome / HTTPS)
-            if (isMobile && navigator.bluetooth) {
-                try {
-                    const char = await getBluetoothPrintCharacteristic();
-                    const bytes = buildEscPosBytes(receiptData);
-                    await sendBytesToPrinter(char, bytes);
-                    return;
-                } catch (err) {
-                    console.warn("Bluetooth Print notice:", err);
-                    if (err.name === 'NotFoundError' || (err.message && err.message.toLowerCase().includes('user cancelled'))) {
-                        return;
-                    }
-                    if (confirm("Koneksi Bluetooth tidak merespons: " + (err.message || "Gagal menghubungkan") + ".\n\nBuka dialog cetak sistem biasa?")) {
-                        window.print();
-                    }
-                    return;
-                }
+        function closePrintModeModal() {
+            const modal = document.getElementById('printModeModal');
+            if (modal) modal.classList.add('hidden');
+        }
+
+        async function selectPrintMode(mode) {
+            const remember = document.getElementById('rememberPrintMode')?.checked ?? true;
+            if (remember) {
+                localStorage.setItem('receipt_print_mode', mode);
+            }
+            closePrintModeModal();
+
+            if (mode === 'bluetooth') {
+                await printViaBluetooth();
+            } else {
+                window.print();
+            }
+        }
+
+        async function printViaBluetooth() {
+            if (!navigator.bluetooth) {
+                alert("Browser ini belum mendukung Web Bluetooth. Silakan gunakan Google Chrome atau Microsoft Edge dengan koneksi HTTPS pada Laptop atau HP/Tablet Anda.");
+                window.print();
+                return;
             }
 
-            // Default untuk Laptop / Komputer PC Desktop
-            window.print();
+            try {
+                const char = await getBluetoothPrintCharacteristic();
+                const bytes = buildEscPosBytes(receiptData);
+                await sendBytesToPrinter(char, bytes);
+            } catch (err) {
+                console.warn("Bluetooth Print notice:", err);
+                if (err.name === 'NotFoundError' || (err.message && err.message.toLowerCase().includes('user cancelled'))) {
+                    return;
+                }
+                if (confirm("Koneksi Bluetooth tidak merespons: " + (err.message || "Gagal menghubungkan") + ".\n\nBuka dialog cetak sistem biasa?")) {
+                    window.print();
+                }
+            }
+        }
+
+        async function handlePrint() {
+            const isMobile = /Android|iPhone|iPad|iPod|webOS|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+            const savedMode = localStorage.getItem('receipt_print_mode');
+
+            // Jika mode tersimpan sudah ditentukan pengguna
+            if (savedMode === 'bluetooth') {
+                await printViaBluetooth();
+                return;
+            } else if (savedMode === 'system') {
+                window.print();
+                return;
+            }
+
+            // Jika belum ada preferensi tersimpan:
+            if (isMobile) {
+                // Pada HP / Tablet Android default langsung coba Bluetooth
+                if (navigator.bluetooth) {
+                    await printViaBluetooth();
+                } else {
+                    window.print();
+                }
+            } else {
+                // Pada Laptop / Komputer Desktop:
+                // Jika browser mendukung Web Bluetooth (Chrome / Edge), tampilkan pilihan agar pengguna tahu bisa langsung Bluetooth tanpa driver atau pakai USB
+                if (navigator.bluetooth) {
+                    openPrintModeModal();
+                } else {
+                    window.print();
+                }
+            }
         }
     </script>
+
+    <!-- Modal Pilihan Metode Cetak (Bluetooth vs USB/Sistem) -->
+    <div id="printModeModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs hidden no-print">
+        <div class="bg-white rounded-2xl max-w-sm w-full p-5 shadow-2xl border border-slate-100 space-y-4">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                <div class="flex items-center gap-2">
+                    <span class="p-2 rounded-xl bg-amber-50 text-amber-700">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                        </svg>
+                    </span>
+                    <div>
+                        <h4 class="font-bold text-slate-800 text-sm">Metode Cetak Struk</h4>
+                        <p class="text-[11px] text-slate-500">Pilih koneksi printer thermal 58mm Anda</p>
+                    </div>
+                </div>
+                <button type="button" onclick="closePrintModeModal()" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg cursor-pointer">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+
+            <div class="space-y-2.5">
+                <button type="button" onclick="selectPrintMode('bluetooth')"
+                    class="w-full text-left p-3.5 rounded-xl border border-slate-200 hover:border-amber-500 hover:bg-amber-50/40 transition group flex items-start gap-3 cursor-pointer">
+                    <div class="p-2 rounded-lg bg-blue-50 text-blue-600 group-hover:bg-amber-500 group-hover:text-white transition">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3v18l7-5-7-5 7-5-7-3z" />
+                        </svg>
+                    </div>
+                    <div class="flex-1">
+                        <div class="flex items-center justify-between">
+                            <span class="font-bold text-xs text-slate-800">Bluetooth Thermal</span>
+                            <span class="text-[9.5px] px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-bold">Langsung Web</span>
+                        </div>
+                        <p class="text-[11px] text-slate-500 mt-0.5 leading-snug">
+                            Langsung cetak via Bluetooth dari Chrome / Edge tanpa install aplikasi atau driver (Laptop & HP).
+                        </p>
+                    </div>
+                </button>
+
+                <button type="button" onclick="selectPrintMode('system')"
+                    class="w-full text-left p-3.5 rounded-xl border border-slate-200 hover:border-amber-500 hover:bg-amber-50/40 transition group flex items-start gap-3 cursor-pointer">
+                    <div class="p-2 rounded-lg bg-slate-100 text-slate-700 group-hover:bg-amber-500 group-hover:text-white transition">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                        </svg>
+                    </div>
+                    <div class="flex-1">
+                        <div class="flex items-center justify-between">
+                            <span class="font-bold text-xs text-slate-800">Kabel USB / Driver Sistem</span>
+                            <span class="text-[9.5px] px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 font-bold">Dialog Windows</span>
+                        </div>
+                        <p class="text-[11px] text-slate-500 mt-0.5 leading-snug">
+                            Cetak lewat kabel USB atau driver printer thermal yang terpasang di sistem operasi laptop/PC.
+                        </p>
+                    </div>
+                </button>
+            </div>
+
+            <div class="pt-2 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
+                <label class="inline-flex items-center gap-1.5 cursor-pointer text-[11px]">
+                    <input type="checkbox" id="rememberPrintMode" checked class="rounded text-amber-600 focus:ring-amber-500">
+                    <span>Ingat pilihan saya</span>
+                </label>
+                <button type="button" onclick="closePrintModeModal()" class="text-[11px] font-bold text-slate-500 hover:text-slate-800 cursor-pointer">
+                    Batal
+                </button>
+            </div>
+        </div>
+    </div>
 </body>
 </html>
 
