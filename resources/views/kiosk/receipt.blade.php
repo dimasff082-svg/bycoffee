@@ -95,12 +95,12 @@
 
         <!-- Action Buttons (No Print) -->
         <div class="no-print grid grid-cols-2 gap-3">
-            <button type="button" onclick="window.print()"
-                class="py-3 px-4 rounded-2xl bg-[#262017] hover:bg-[#15120c] active:scale-95 text-white font-extrabold text-xs shadow-md transition flex items-center justify-center gap-2">
+            <button type="button" onclick="handlePrint()"
+                class="py-3 px-4 rounded-2xl bg-[#262017] hover:bg-[#15120c] active:scale-95 text-white font-extrabold text-xs shadow-md transition flex items-center justify-center gap-2 cursor-pointer">
                 <svg class="w-4 h-4 text-[#c59b27]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
                 </svg>
-                <span>Cetak Struk (58mm)</span>
+                <span>Cetak Struk</span>
             </button>
 
             <a href="{{ route('kiosk.index') }}"
@@ -240,6 +240,252 @@
                 window.location.href = "{{ route('kiosk.index') }}";
             }
         }, 1000);
+
+        const receiptData = {
+            storeNameLine1: @json($storeNameLine1),
+            storeNameLine2: @json($storeNameLine2 ?? ''),
+            storeAddress: @json($storeAddress ?? ''),
+            storePhone: @json($storePhone ?? ''),
+            storeHours: @json($storeHours ?? ''),
+            trxNumber: @json($sale->transaction_number),
+            tableNumber: @json($sale->table_number ?? 'KIOSK'),
+            customerName: @json($sale->customer_name ?? ''),
+            customerPhone: @json($sale->customer_phone ?? ''),
+            trxTime: @json($sale->transaction_date->format('d/m/Y H:i:s')),
+            cashierName: @json($sale->confirmer?->name ?? ($sale->user?->name ?? 'Kasir Shift')),
+            isPaid: @json($sale->isPaid()),
+            paymentMethod: @json($sale->payment?->methodLabel() ?? 'TUNAI'),
+            subtotal: @json((float)$sale->subtotal),
+            total: @json((float)$sale->total_amount),
+            amountTendered: @json((float)($sale->payment?->amount_tendered ?? $sale->total_amount)),
+            changeAmount: @json((float)($sale->payment?->change_amount ?? 0)),
+            items: [
+                @foreach($sale->items as $item)
+                {
+                    name: @json($item->product_name_snapshot),
+                    sku: @json($item->sku_snapshot ?? ''),
+                    quantity: @json((int)$item->quantity),
+                    price: @json((float)$item->unit_price),
+                    total: @json((float)$item->line_total)
+                },
+                @endforeach
+            ]
+        };
+
+        function formatRupiah(num) {
+            return new Intl.NumberFormat('id-ID').format(Math.round(num || 0));
+        }
+
+        function textToBytes(str) {
+            const encoder = new TextEncoder();
+            return Array.from(encoder.encode(str));
+        }
+
+        function padLine(left, right, width = 32) {
+            const l = String(left || '');
+            const r = String(right || '');
+            const spaceCount = Math.max(1, width - l.length - r.length);
+            return l + ' '.repeat(spaceCount) + r;
+        }
+
+        function buildEscPosBytes(data) {
+            const ESC = 0x1B;
+            const GS = 0x1D;
+            const LINE_WIDTH = 32;
+            let bytes = [];
+
+            // 1. Inisialisasi printer ESC/POS
+            bytes.push(ESC, 0x40);
+
+            // 2. Header Toko (Center Alignment)
+            bytes.push(ESC, 0x61, 0x01);
+            bytes.push(GS, 0x21, 0x11); // Double height & width
+            bytes.push(...textToBytes((data.storeNameLine1 || 'KASIR') + "\n"));
+            bytes.push(GS, 0x21, 0x00); // Normal size
+
+            if (data.storeNameLine2) {
+                bytes.push(ESC, 0x45, 0x01); // Bold on
+                bytes.push(...textToBytes(data.storeNameLine2 + "\n"));
+                bytes.push(ESC, 0x45, 0x00);
+            }
+
+            if (data.storeAddress) {
+                bytes.push(...textToBytes(data.storeAddress + "\n"));
+            }
+            if (data.storePhone) {
+                bytes.push(...textToBytes("Telp / WA: " + data.storePhone + "\n"));
+            }
+            if (data.storeHours) {
+                bytes.push(...textToBytes("Jam: " + data.storeHours + "\n"));
+            }
+
+            // Pembatas garis 58mm (32 kolom)
+            bytes.push(ESC, 0x61, 0x00); // Left align
+            bytes.push(...textToBytes("-".repeat(LINE_WIDTH) + "\n"));
+
+            // Metadata Transaksi
+            bytes.push(...textToBytes(padLine("No. Transaksi", data.trxNumber, LINE_WIDTH) + "\n"));
+            let tableLabel = data.tableNumber === 'ONLINE' ? 'Pesanan Online' : (data.tableNumber === 'TAKEAWAY' ? 'Bawa Pulang' : (data.tableNumber === 'KIOSK' ? 'Kiosk Mandiri' : 'Meja ' + data.tableNumber));
+            bytes.push(...textToBytes(padLine("Tipe / Meja", tableLabel, LINE_WIDTH) + "\n"));
+            if (data.customerName) {
+                bytes.push(...textToBytes(padLine("Pelanggan", data.customerName, LINE_WIDTH) + "\n"));
+            }
+            if (data.customerPhone) {
+                bytes.push(...textToBytes(padLine("No. HP", data.customerPhone, LINE_WIDTH) + "\n"));
+            }
+            bytes.push(...textToBytes(padLine("Waktu", data.trxTime, LINE_WIDTH) + "\n"));
+            bytes.push(...textToBytes(padLine("Kasir", data.cashierName, LINE_WIDTH) + "\n"));
+            bytes.push(...textToBytes(padLine("Status", data.isPaid ? "LUNAS" : "BELUM LUNAS", LINE_WIDTH) + "\n"));
+
+            // Pembatas Menu
+            bytes.push(...textToBytes("-".repeat(LINE_WIDTH) + "\n"));
+
+            // Rincian Menu Pesanan
+            (data.items || []).forEach(item => {
+                bytes.push(ESC, 0x45, 0x01); // Nama item cetak tebal
+                bytes.push(...textToBytes(item.name + "\n"));
+                bytes.push(ESC, 0x45, 0x00);
+                const qtyPrice = `  ${item.quantity} x ${formatRupiah(item.price)}`;
+                const lineTotal = formatRupiah(item.total);
+                bytes.push(...textToBytes(padLine(qtyPrice, lineTotal, LINE_WIDTH) + "\n"));
+            });
+
+            // Pembatas Total
+            bytes.push(...textToBytes("-".repeat(LINE_WIDTH) + "\n"));
+
+            // Subtotal & Total
+            bytes.push(...textToBytes(padLine("Subtotal Item", "Rp " + formatRupiah(data.subtotal), LINE_WIDTH) + "\n"));
+            bytes.push(ESC, 0x45, 0x01); // Bold
+            bytes.push(GS, 0x21, 0x01);  // Double height
+            bytes.push(...textToBytes(padLine("TOTAL TAGIHAN", "Rp " + formatRupiah(data.total), LINE_WIDTH) + "\n"));
+            bytes.push(GS, 0x21, 0x00);  // Normal size
+            bytes.push(ESC, 0x45, 0x00);
+
+            // Informasi Pembayaran
+            bytes.push(...textToBytes(padLine("Metode Bayar", data.paymentMethod, LINE_WIDTH) + "\n"));
+            if (data.amountTendered > 0) {
+                bytes.push(...textToBytes(padLine("Uang Diterima", "Rp " + formatRupiah(data.amountTendered), LINE_WIDTH) + "\n"));
+                bytes.push(...textToBytes(padLine("Uang Kembalian", "Rp " + formatRupiah(data.changeAmount), LINE_WIDTH) + "\n"));
+            }
+
+            // Footer Struk
+            bytes.push(ESC, 0x61, 0x01); // Center align
+            bytes.push(...textToBytes("-".repeat(LINE_WIDTH) + "\n"));
+            bytes.push(...textToBytes("Terima kasih atas kunjungan Anda!\n"));
+            if (data.storePhone) {
+                bytes.push(...textToBytes("Hubungi Toko: " + data.storePhone + "\n"));
+            }
+            bytes.push(...textToBytes("Barang yg sudah dibeli tdk dpt\n"));
+            bytes.push(...textToBytes("ditukar tanpa bukti struk ini.\n"));
+
+            // Feed kertas & potong kertas (cut)
+            bytes.push(...textToBytes("\n\n\n\n"));
+            bytes.push(GS, 0x56, 0x41, 0x03);
+
+            return new Uint8Array(bytes);
+        }
+
+        let bluetoothDevice = null;
+        let printCharacteristic = null;
+
+        async function getBluetoothPrintCharacteristic() {
+            if (bluetoothDevice && bluetoothDevice.gatt && bluetoothDevice.gatt.connected && printCharacteristic) {
+                return printCharacteristic;
+            }
+
+            if (!navigator.bluetooth) {
+                throw new Error("Web Bluetooth tidak didukung pada browser ini. Gunakan Google Chrome di Android.");
+            }
+
+            const knownServices = [
+                '000018f0-0000-1000-8000-00805f9b34fb', // Standard Printer ESC/POS
+                '49535343-fe7d-4ae5-8fa9-9fafd205e455', // ISSC Transparent Serial
+                '0000ff00-0000-1000-8000-00805f9b34fb',
+                '0000ae00-0000-1000-8000-00805f9b34fb',
+                '0000ff01-0000-1000-8000-00805f9b34fb',
+                'e7810a71-73ae-499d-8c15-faa9aef0c3f2'
+            ];
+
+            bluetoothDevice = await navigator.bluetooth.requestDevice({
+                acceptAllDevices: true,
+                optionalServices: knownServices
+            });
+
+            if (!bluetoothDevice) {
+                throw new Error("Tidak ada perangkat Bluetooth yang dipilih.");
+            }
+
+            const server = await bluetoothDevice.gatt.connect();
+
+            // Cari characteristic yang mendukung fungsi write
+            for (const serviceUuid of knownServices) {
+                try {
+                    const service = await server.getPrimaryService(serviceUuid);
+                    const chars = await service.getCharacteristics();
+                    for (const ch of chars) {
+                        if (ch.properties.write || ch.properties.writeWithoutResponse) {
+                            printCharacteristic = ch;
+                            return printCharacteristic;
+                        }
+                    }
+                } catch (e) {}
+            }
+
+            // Cek seluruh primary service pada printer
+            try {
+                const services = await server.getPrimaryServices();
+                for (const service of services) {
+                    const chars = await service.getCharacteristics();
+                    for (const ch of chars) {
+                        if (ch.properties.write || ch.properties.writeWithoutResponse) {
+                            printCharacteristic = ch;
+                            return printCharacteristic;
+                        }
+                    }
+                }
+            } catch (e) {}
+
+            throw new Error("Layanan cetak ESC/POS tidak ditemukan pada perangkat Bluetooth ini.");
+        }
+
+        async function sendBytesToPrinter(char, bytes) {
+            const CHUNK_SIZE = 64;
+            for (let i = 0; i < bytes.length; i += CHUNK_SIZE) {
+                const chunk = bytes.slice(i, i + CHUNK_SIZE);
+                if (char.properties.writeWithoutResponse) {
+                    await char.writeValueWithoutResponse(chunk);
+                } else {
+                    await char.writeValue(chunk);
+                }
+                await new Promise(res => setTimeout(res, 25));
+            }
+        }
+
+        async function handlePrint() {
+            const isMobile = /Android|iPhone|iPad|iPod|webOS|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+
+            // Jika dibuka dari HP / Tablet Android dengan browser yang mendukung Web Bluetooth (Chrome / HTTPS)
+            if (isMobile && navigator.bluetooth) {
+                try {
+                    const char = await getBluetoothPrintCharacteristic();
+                    const bytes = buildEscPosBytes(receiptData);
+                    await sendBytesToPrinter(char, bytes);
+                    return;
+                } catch (err) {
+                    console.warn("Bluetooth Print notice:", err);
+                    if (err.name === 'NotFoundError' || (err.message && err.message.toLowerCase().includes('user cancelled'))) {
+                        return;
+                    }
+                    if (confirm("Koneksi Bluetooth tidak merespons: " + (err.message || "Gagal menghubungkan") + ".\n\nBuka dialog cetak sistem biasa?")) {
+                        window.print();
+                    }
+                    return;
+                }
+            }
+
+            // Default untuk Laptop / Komputer PC Desktop
+            window.print();
+        }
     </script>
 </body>
 </html>
