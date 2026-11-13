@@ -106,9 +106,14 @@ class RestaurantOrderTest extends TestCase
      */
     public function test_customer_can_self_order_successfully(): void
     {
+        Storage::fake('public');
+        $proof = UploadedFile::fake()->image('bukti_bayar.jpg');
+
         $response = $this->post(route('order.checkout', 'M001'), [
             'customer_name' => 'Dimas',
             'notes' => 'Tolong pedas sedikit',
+            'payment_choice' => 'qris',
+            'payment_proof' => $proof,
             'items' => [
                 [
                     'id' => $this->food->id,
@@ -128,6 +133,8 @@ class RestaurantOrderTest extends TestCase
         $this->assertEquals(55000, (float) $sale->total_amount); // 2 * 25000 + 1 * 5000
         $this->assertEquals('pending', $sale->order_status);
         $this->assertEquals('unpaid', $sale->payment_status);
+        $this->assertNotNull($sale->payment_proof);
+        $this->assertTrue($sale->hasPaymentProof());
         $this->assertEquals($this->cashier->id, $sale->user_id); // Dicatat pada kasir yang sedang aktif login
 
         $response->assertRedirect(route('order.status', ['M001', $sale->id]));
@@ -445,29 +452,34 @@ class RestaurantOrderTest extends TestCase
     }
 
     /**
-     * 13. Pelanggan memilih metode Bayar Tunai di Kasir.
+     * 13. Pelanggan memilih metode Transfer Bank dan mengunggah bukti bayar, kasir mengonfirmasi.
      */
-    public function test_customer_can_choose_cash_payment_and_pay_at_cashier(): void
+    public function test_customer_can_choose_bank_transfer_payment_and_pay_with_proof(): void
     {
+        Storage::fake('public');
+        $proof = UploadedFile::fake()->image('transfer_proof.jpg');
+
         $response = $this->post(route('order.checkout', 'M001'), [
-            'customer_name' => 'Budi Tunai',
-            'payment_choice' => 'cash',
+            'customer_name' => 'Budi Transfer',
+            'payment_choice' => 'transfer',
+            'payment_proof' => $proof,
             'items' => [
                 ['id' => $this->food->id, 'quantity' => 1],
             ],
         ]);
 
-        $sale = Sale::where('customer_name', 'Budi Tunai')->first();
+        $sale = Sale::where('customer_name', 'Budi Transfer')->first();
         $this->assertNotNull($sale);
         $this->assertEquals('unpaid', $sale->payment_status);
         $this->assertNull($sale->open_bill_id);
+        $this->assertNotNull($sale->payment_proof);
 
         $response->assertRedirect(route('order.status', ['M001', $sale->id]));
 
-        // Kasir mengonfirmasi pembayaran tunai
+        // Kasir mengonfirmasi pembayaran transfer
         $this->actingAs($this->cashier);
         $confirmResponse = $this->post(route('cashier.orders.confirm_payment', $sale->id), [
-            'payment_method' => 'cash',
+            'payment_method' => 'transfer',
             'amount_tendered' => 25000,
         ]);
         $confirmResponse->assertRedirect();
@@ -475,43 +487,85 @@ class RestaurantOrderTest extends TestCase
         $sale->refresh();
         $this->assertEquals('paid', $sale->payment_status);
         $this->assertEquals('completed', $sale->status);
+        $this->assertNotNull($sale->payment_proof);
+
+        $payment = Payment::where('sale_id', $sale->id)->first();
+        $this->assertNotNull($payment);
+        $this->assertEquals('transfer', $payment->method);
+        $this->assertNotNull($payment->payment_proof);
     }
 
     /**
-     * 14. Pelanggan memilih metode Payment Gateway Midtrans dan pembayaran berhasil dikonfirmasi.
+     * 14. Pesanan meja WAJIB menyertakan bukti pembayaran dan baru masuk ke dapur setelah kasir konfirmasi.
      */
-    public function test_customer_can_pay_via_midtrans_gateway_and_auto_confirm_payment(): void
+    public function test_table_order_requires_proof_and_reaches_kitchen_only_after_cashier_confirms(): void
     {
-        $response = $this->postJson(route('order.checkout', 'M001'), [
-            'customer_name' => 'Siti Online',
-            'payment_choice' => 'midtrans',
+        Storage::fake('public');
+
+        // 1. Validasi: Pelanggan tidak mengunggah bukti pembayaran -> GAGAL
+        $failResponse = $this->post(route('order.checkout', 'M001'), [
+            'customer_name' => 'Siti Tanpa Bukti',
+            'payment_choice' => 'qris',
+            'items' => [
+                ['id' => $this->food->id, 'quantity' => 2],
+            ],
+        ]);
+        $failResponse->assertSessionHasErrors('payment_proof');
+
+        // 2. Pelanggan memesan dengan QRIS + mengunggah bukti pembayaran -> BERHASIL
+        $proof = UploadedFile::fake()->image('bukti_qris.png');
+        $successResponse = $this->post(route('order.checkout', 'M001'), [
+            'customer_name' => 'Siti QRIS',
+            'payment_choice' => 'qris',
+            'payment_proof' => $proof,
             'items' => [
                 ['id' => $this->food->id, 'quantity' => 2],
             ],
         ]);
 
-        $response->assertOk();
-        $response->assertJsonStructure(['success', 'redirect_url']);
-
-        $sale = Sale::where('customer_name', 'Siti Online')->first();
+        $sale = Sale::where('customer_name', 'Siti QRIS')->first();
         $this->assertNotNull($sale);
+        $this->assertEquals('unpaid', $sale->payment_status);
+        $this->assertNotNull($sale->payment_proof);
 
-        // Simulasi callback Midtrans Snap sukses
-        $callbackResponse = $this->postJson(route('order.midtrans_success', ['M001', $sale->id]), [
-            'transaction_id' => 'MIDTRANS-TRX-12345',
+        // 3. Verifikasi Dapur: Pesanan BELUM masuk dapur karena belum dikonfirmasi kasir
+        session()->forget('success');
+        $this->actingAs($this->kitchen);
+        $kitchenResponseBefore = $this->get(route('kitchen.index'));
+        $kitchenResponseBefore->assertOk();
+        $kitchenResponseBefore->assertViewHas('orders', function ($orders) use ($sale) {
+            return ! $orders->contains('id', $sale->id);
+        });
+        $kitchenResponseBefore->assertDontSee($sale->transaction_number);
+
+        // 4. Verifikasi Kasir: Kasir melihat pesanan masuk di tabel dengan bukti pembayaran
+        $this->actingAs($this->cashier);
+        $cashierDashboard = $this->get(route('cashier.dashboard'));
+        $cashierDashboard->assertOk();
+        $cashierDashboard->assertSee($sale->transaction_number);
+        $cashierDashboard->assertSee('Bukti Bayar');
+        $cashierDashboard->assertSee('Lihat Bukti');
+
+        // 5. Kasir mengonfirmasi pesanan setelah memeriksa bukti pembayaran
+        $confirmResponse = $this->post(route('cashier.orders.confirm_payment', $sale->id), [
+            'payment_method' => 'qris',
+            'amount_tendered' => 50000,
         ]);
-
-        $callbackResponse->assertOk();
-        $callbackResponse->assertJson(['success' => true]);
+        $confirmResponse->assertRedirect();
 
         $sale->refresh();
         $this->assertEquals('paid', $sale->payment_status);
-        $this->assertEquals('completed', $sale->status);
+        $this->assertEquals($this->cashier->id, $sale->confirmed_by);
+        $this->assertNotNull($sale->confirmed_at);
 
-        $payment = Payment::where('sale_id', $sale->id)->first();
-        $this->assertNotNull($payment);
-        $this->assertEquals('midtrans', $payment->method);
-        $this->assertEquals('MIDTRANS-TRX-12345', $payment->reference_number);
+        // 6. Verifikasi Dapur: Pesanan SEKARANG SUDAH MASUK ke dapur karena telah dikonfirmasi kasir!
+        $this->actingAs($this->kitchen);
+        $kitchenResponseAfter = $this->get(route('kitchen.index'));
+        $kitchenResponseAfter->assertOk();
+        $kitchenResponseAfter->assertViewHas('orders', function ($orders) use ($sale) {
+            return $orders->contains('id', $sale->id);
+        });
+        $kitchenResponseAfter->assertSee($sale->transaction_number);
     }
 
     /**
@@ -1046,9 +1100,11 @@ class RestaurantOrderTest extends TestCase
         $this->assertEquals($this->cashier->id, User::getActiveCashierId());
 
         // 2. Pelanggan melakukan pemesanan mandiri via QR Code meja
+        Storage::fake('public');
         $response = $this->post(route('order.checkout', 'M001'), [
             'customer_name' => 'Budi Santoso',
-            'payment_choice' => 'cash',
+            'payment_choice' => 'qris',
+            'payment_proof' => UploadedFile::fake()->image('bukti.png'),
             'items' => [
                 ['id' => $this->food->id, 'quantity' => 1],
             ],

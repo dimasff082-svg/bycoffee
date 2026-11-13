@@ -172,6 +172,145 @@
                     </div>
                 </div>
 
+                <!-- Card 3: Pengaturan Metode Pembayaran Meja (QRIS & Transfer Bank) -->
+                <div class="bg-white rounded-2xl border border-[#e5dfd3] p-6 shadow-[0_4px_20px_-4px_rgba(38,32,23,0.05)] space-y-6">
+                    <div class="flex items-center gap-3 pb-3 border-b border-[#f0ece1]">
+                        <div class="w-9 h-9 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 flex items-center justify-center font-bold">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                            </svg>
+                        </div>
+                        <div>
+                            <h2 class="font-serif-classic text-base font-bold text-[#262017]">Metode Pembayaran Pesanan Meja (QRIS & Transfer Bank)</h2>
+                            <p class="text-xs text-[#786e60]">Konfigurasi kode QRIS barcode dan rekening bank yang digunakan pelanggan saat memesan dari meja.</p>
+                        </div>
+                    </div>
+
+                    <!-- 1. Bagian QRIS -->
+                    <div class="p-4 rounded-xl bg-[#faf8f5] border border-[#e5dfd3] space-y-4">
+                        <div class="flex items-center justify-between border-b border-[#ebdcc4] pb-2">
+                            <div class="flex items-center gap-2">
+                                <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+                                <h3 class="text-xs font-bold text-[#262017] uppercase tracking-wider">1. Pembayaran QRIS</h3>
+                            </div>
+                            <span class="text-[10px] font-semibold text-emerald-800 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-md">
+                                Mendukung Scan All E-Wallet & M-Banking
+                            </span>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <!-- Foto Barcode QRIS -->
+                            <div class="space-y-2">
+                                <label class="block text-xs font-bold text-[#262017]">
+                                    Gambar / Barcode QRIS Toko
+                                </label>
+                                <div class="flex items-start gap-4 p-3 bg-white rounded-xl border border-dashed border-[#d6cfc2]">
+                                    <div class="w-24 h-24 shrink-0 rounded-lg bg-[#faf8f5] border border-slate-200 overflow-hidden flex items-center justify-center">
+                                        @if(!empty($settings['payment_qris_image']))
+                                            <img src="{{ asset('storage/'.$settings['payment_qris_image']) }}" alt="QRIS Toko" class="w-full h-full object-contain">
+                                        @else
+                                            <div class="text-center p-2 text-[10px] text-slate-400">
+                                                <svg class="w-6 h-6 mx-auto mb-1 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"/></svg>
+                                                Belum ada foto QRIS
+                                            </div>
+                                        @endif
+                                    </div>
+                                    <div class="flex-1 space-y-2">
+                                        <input type="file" name="payment_qris_image" accept="image/*"
+                                            class="w-full text-xs text-[#786e60] file:mr-2 file:py-1.5 file:px-2.5 file:rounded-lg file:border-0 file:text-[11px] file:font-bold file:bg-[#c59b27] file:text-stone-950 hover:file:bg-[#a98119] file:cursor-pointer">
+                                        <p class="text-[10px] text-[#786e60]">Format: PNG, JPG, JPEG, WEBP. Maks: 2MB.</p>
+                                        @if(!empty($settings['payment_qris_image']))
+                                            <label class="flex items-center gap-1.5 text-[11px] text-rose-700 font-semibold cursor-pointer pt-1">
+                                                <input type="checkbox" name="remove_qris_image" value="1" class="rounded text-rose-600 border-rose-300">
+                                                <span>Hapus barcode QRIS saat ini</span>
+                                            </label>
+                                        @endif
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Nama Akun QRIS & Catatan -->
+                            <div class="space-y-3">
+                                <div>
+                                    <label class="block text-xs font-bold text-[#262017] mb-1">
+                                        Nama Merchant / Akun QRIS
+                                    </label>
+                                    <input type="text" name="payment_qris_name"
+                                        value="{{ old('payment_qris_name', $settings['payment_qris_name'] ?? 'Fira Cake QRIS') }}"
+                                        placeholder="Contoh: Fira Cake Bakery & Pastry"
+                                        class="w-full text-xs px-3.5 py-2 rounded-xl border border-[#d6cfc2] bg-white focus:outline-none focus:ring-1 focus:ring-[#c59b27]">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-[#262017] mb-1">
+                                        Petunjuk / Catatan Pembayaran QRIS
+                                    </label>
+                                    <textarea name="payment_qris_notes" rows="2"
+                                        placeholder="Contoh: Buka aplikasi mobile banking atau e-wallet Anda, scan barcode di atas lalu unggah bukti pembayaran..."
+                                        class="w-full text-xs p-2.5 rounded-xl border border-[#d6cfc2] bg-white focus:outline-none focus:ring-1 focus:ring-[#c59b27]">{{ old('payment_qris_notes', $settings['payment_qris_notes'] ?? 'Scan kode QRIS di atas untuk melakukan pembayaran langsung via GoPay, OVO, ShopeePay, BCA, atau M-Banking lainnya.') }}</textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 2. Bagian Transfer Bank -->
+                    <div class="p-4 rounded-xl bg-[#faf8f5] border border-[#e5dfd3] space-y-4">
+                        <div class="flex items-center justify-between border-b border-[#ebdcc4] pb-2">
+                            <div class="flex items-center gap-2">
+                                <span class="w-2.5 h-2.5 rounded-full bg-blue-500"></span>
+                                <h3 class="text-xs font-bold text-[#262017] uppercase tracking-wider">2. Pembayaran Transfer Bank</h3>
+                            </div>
+                            <span class="text-[10px] font-semibold text-blue-800 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded-md">
+                                Transfer Manual ke Rekening Toko
+                            </span>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                            <!-- Nama Bank -->
+                            <div>
+                                <label class="block text-xs font-bold text-[#262017] mb-1">
+                                    Nama Bank <span class="text-rose-600">*</span>
+                                </label>
+                                <input type="text" name="payment_bank_name"
+                                    value="{{ old('payment_bank_name', $settings['payment_bank_name'] ?? 'BCA') }}"
+                                    placeholder="Contoh: BCA / Mandiri / BNI / BRI"
+                                    class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-[#d6cfc2] bg-white focus:outline-none focus:ring-1 focus:ring-[#c59b27]">
+                            </div>
+
+                            <!-- Nomor Rekening -->
+                            <div>
+                                <label class="block text-xs font-bold text-[#262017] mb-1">
+                                    Nomor Rekening Bank <span class="text-rose-600">*</span>
+                                </label>
+                                <input type="text" name="payment_bank_account_number"
+                                    value="{{ old('payment_bank_account_number', $settings['payment_bank_account_number'] ?? '1234567890') }}"
+                                    placeholder="Contoh: 1234567890"
+                                    class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-[#d6cfc2] bg-white font-mono font-bold text-[#262017] focus:outline-none focus:ring-1 focus:ring-[#c59b27]">
+                            </div>
+
+                            <!-- Atas Nama Rekening -->
+                            <div>
+                                <label class="block text-xs font-bold text-[#262017] mb-1">
+                                    Atas Nama Pemilik Rekening <span class="text-rose-600">*</span>
+                                </label>
+                                <input type="text" name="payment_bank_account_holder"
+                                    value="{{ old('payment_bank_account_holder', $settings['payment_bank_account_holder'] ?? 'Fira Cake Bakery') }}"
+                                    placeholder="Contoh: Fira Cake Bakery"
+                                    class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-[#d6cfc2] bg-white focus:outline-none focus:ring-1 focus:ring-[#c59b27]">
+                            </div>
+                        </div>
+
+                        <!-- Petunjuk Transfer -->
+                        <div>
+                            <label class="block text-xs font-bold text-[#262017] mb-1">
+                                Petunjuk / Instruksi Transfer Bank
+                            </label>
+                            <textarea name="payment_bank_notes" rows="2"
+                                placeholder="Contoh: Silakan transfer sesuai total pesanan. Simpan bukti transfer dan unggah pada halaman pemesanan meja..."
+                                class="w-full text-xs p-2.5 rounded-xl border border-[#d6cfc2] bg-white focus:outline-none focus:ring-1 focus:ring-[#c59b27]">{{ old('payment_bank_notes', $settings['payment_bank_notes'] ?? 'Transfer sesuai nominal tagihan ke nomor rekening di atas. Simpan struk/bukti transfer untuk diunggah sebelum pesanan dikirim ke kasir.') }}</textarea>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Card 3: Pengaturan Presensi & Radius Kehadiran Karyawan -->
                 <div class="bg-white rounded-2xl border border-[#e5dfd3] p-6 shadow-[0_4px_20px_-4px_rgba(38,32,23,0.05)] space-y-5">
                     <div class="flex items-center gap-3 pb-3 border-b border-[#f0ece1]">

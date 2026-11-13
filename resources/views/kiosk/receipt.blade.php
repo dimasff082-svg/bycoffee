@@ -16,7 +16,23 @@
             font-family: 'Plus Jakarta Sans', sans-serif;
             -webkit-tap-highlight-color: transparent;
         }
+        @page {
+            size: 58mm auto;
+            margin: 0;
+        }
         @media print {
+            * {
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+            html, body {
+                width: 58mm !important;
+                min-width: 58mm !important;
+                max-width: 58mm !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                background: #ffffff !important;
+            }
             body * {
                 visibility: hidden;
             }
@@ -27,12 +43,17 @@
                 position: absolute;
                 left: 0;
                 top: 0;
-                width: 100%;
-                max-width: 80mm;
-                margin: 0 auto;
-                padding: 5px;
+                width: 58mm !important;
+                max-width: 58mm !important;
+                min-width: 58mm !important;
+                margin: 0 !important;
+                padding: 1.5mm 1.5mm !important; /* Margin sangat sedikit untuk printer thermal 58mm */
                 box-shadow: none !important;
                 border: none !important;
+                border-radius: 0 !important;
+                background: #ffffff !important;
+                color: #000000 !important;
+                box-sizing: border-box !important;
             }
             .no-print {
                 display: none !important;
@@ -79,7 +100,7 @@
                 <svg class="w-4 h-4 text-[#c59b27]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
                 </svg>
-                <span>Cetak Struk</span>
+                <span>Cetak Struk (58mm)</span>
             </button>
 
             <a href="{{ route('kiosk.index') }}"
@@ -91,26 +112,26 @@
             </a>
         </div>
 
-        <!-- Digital Receipt Card -->
-        <div id="printable-receipt" class="bg-white rounded-3xl border border-[#e5dfd3] shadow-xl p-7 font-sans">
+        <!-- Digital Receipt Card (Ukuran 58mm) -->
+        <div id="printable-receipt" class="bg-white rounded-2xl border border-[#e5dfd3] shadow-xl p-3.5 sm:p-4 font-sans w-full max-w-[340px] mx-auto text-[#2c261e]">
             <!-- Header Toko -->
-            <div class="text-center pb-4 border-b border-dashed border-slate-300">
-                <img src="{{ $storeLogo }}" alt="{{ $storeName }}" class="w-14 h-14 mx-auto object-contain mb-2 drop-shadow-sm" onerror="this.src='{{ asset('images/default-cake.png') }}'">
-                <h3 class="font-extrabold text-lg text-slate-900 tracking-tight uppercase leading-tight">
+            <div class="text-center pb-3 border-b border-dashed border-slate-300">
+                <img src="{{ $storeLogo }}" alt="{{ $storeName }}" class="w-11 h-11 mx-auto object-contain mb-1.5 drop-shadow-xs" onerror="this.src='{{ asset('images/default-cake.png') }}'">
+                <h3 class="font-extrabold text-sm text-slate-900 tracking-tight uppercase leading-tight">
                     <span>{{ $storeNameLine1 }}</span>
                     @if(!empty($storeNameLine2))
-                        <span class="block text-sm font-bold text-slate-700 mt-0.5">{{ $storeNameLine2 }}</span>
+                        <span class="block text-xs font-bold text-slate-700 mt-0.5">{{ $storeNameLine2 }}</span>
                     @endif
                 </h3>
-                <p class="text-xs text-slate-500 mt-1">{{ $storeAddress }}</p>
-                <p class="text-xs font-semibold text-slate-700 mt-0.5">Telp / WA: {{ $storePhone }}</p>
-                <span class="inline-block mt-1 px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-slate-100 text-slate-700 border border-slate-200">
-                    Layar Pemesanan Mandiri (Kiosk)
+                <p class="text-[9.5px] text-slate-500 mt-0.5 leading-snug">{{ $storeAddress }}</p>
+                <p class="text-[9.5px] font-semibold text-slate-700 mt-0.5">Telp / WA: {{ $storePhone }}</p>
+                <span class="inline-block mt-1 px-2 py-0.5 rounded-full text-[8.5px] font-black uppercase tracking-wider bg-slate-100 text-slate-700 border border-slate-200">
+                    Layar Mandiri (Kiosk)
                 </span>
             </div>
 
             <!-- Metadata Pesanan -->
-            <div class="py-3.5 border-b border-dashed border-slate-300 text-xs space-y-1.5 font-mono">
+            <div class="py-2.5 border-b border-dashed border-slate-300 text-[10px] space-y-1 font-mono">
                 <div class="flex justify-between">
                     <span class="text-slate-400">No. Transaksi</span>
                     <span class="font-bold text-slate-900">{{ $sale->transaction_number }}</span>
@@ -121,7 +142,7 @@
                 </div>
                 <div class="flex justify-between">
                     <span class="text-slate-400">Nama Pelanggan</span>
-                    <span class="font-bold text-slate-800">{{ $sale->customer_name }}</span>
+                    <span class="font-bold text-slate-800 truncate max-w-[170px] text-right">{{ $sale->customer_name }}</span>
                 </div>
                 @if($sale->customer_phone)
                     <div class="flex justify-between">
@@ -135,7 +156,7 @@
                 </div>
                 <div class="flex justify-between">
                     <span class="text-slate-400">Kasir Bertugas</span>
-                    <span class="text-slate-700 font-semibold">{{ $sale->confirmer?->name ?? ($sale->user?->name ?? 'Kasir Shift') }}</span>
+                    <span class="text-slate-700 font-semibold truncate max-w-[170px] text-right">{{ $sale->confirmer?->name ?? ($sale->user?->name ?? 'Kasir Shift') }}</span>
                 </div>
                 <div class="flex justify-between">
                     <span class="text-slate-400">Status Bayar</span>
@@ -147,27 +168,27 @@
                 </div>
             </div>
 
-            <!-- Daftar Menu Item -->
-            <div class="py-3.5 border-b border-dashed border-slate-300">
-                <table class="w-full text-xs">
+            <!-- Daftar Menu Item (58mm) -->
+            <div class="py-2.5 border-b border-dashed border-slate-300">
+                <table class="w-full text-[10px] leading-tight">
                     <thead>
-                        <tr class="text-slate-400 text-left font-mono border-b border-slate-100 pb-1.5">
-                            <th class="pb-1">Item Menu</th>
-                            <th class="pb-1 text-center">Qty</th>
-                            <th class="pb-1 text-right">Harga</th>
-                            <th class="pb-1 text-right">Total</th>
+                        <tr class="text-slate-400 text-left font-mono border-b border-slate-100 pb-1">
+                            <th class="pb-1 text-left font-bold">Item</th>
+                            <th class="pb-1 text-center font-bold w-6">Qty</th>
+                            <th class="pb-1 text-right font-bold w-12">Harga</th>
+                            <th class="pb-1 text-right font-bold w-14">Total</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100 font-mono">
                         @foreach($sale->items as $item)
                             <tr>
-                                <td class="py-2 pr-1">
+                                <td class="py-1.5 pr-1">
                                     <div class="font-bold text-slate-900 leading-tight">{{ $item->product_name_snapshot }}</div>
-                                    <div class="text-[10px] text-slate-400">{{ $item->sku_snapshot }}</div>
+                                    <div class="text-[8.5px] text-slate-400">{{ $item->sku_snapshot }}</div>
                                 </td>
-                                <td class="py-2 text-center text-slate-700">{{ $item->quantity }}</td>
-                                <td class="py-2 text-right text-slate-600">{{ number_format($item->unit_price, 0, ',', '.') }}</td>
-                                <td class="py-2 text-right font-bold text-slate-900">{{ number_format($item->line_total, 0, ',', '.') }}</td>
+                                <td class="py-1.5 text-center text-slate-700 align-top">{{ $item->quantity }}</td>
+                                <td class="py-1.5 text-right text-slate-600 align-top">{{ number_format($item->unit_price, 0, ',', '.') }}</td>
+                                <td class="py-1.5 text-right font-bold text-slate-900 align-top">{{ number_format($item->line_total, 0, ',', '.') }}</td>
                             </tr>
                         @endforeach
                     </tbody>
@@ -175,18 +196,18 @@
             </div>
 
             <!-- Rincian Total -->
-            <div class="py-3.5 border-b border-dashed border-slate-300 text-xs font-mono space-y-1.5">
+            <div class="py-2.5 border-b border-dashed border-slate-300 text-[10px] font-mono space-y-1.5">
                 <div class="flex justify-between text-slate-600">
                     <span>Subtotal Menu</span>
                     <span>Rp {{ number_format($sale->subtotal, 0, ',', '.') }}</span>
                 </div>
 
-                <div class="flex justify-between text-base font-black text-slate-900 pt-2 border-t border-slate-100">
+                <div class="flex justify-between text-xs font-black text-slate-900 pt-1.5 border-t border-slate-100">
                     <span>TOTAL TAGIHAN</span>
-                    <span class="text-emerald-700">Rp {{ number_format($sale->total_amount, 0, ',', '.') }}</span>
+                    <span class="text-emerald-700 text-sm">Rp {{ number_format($sale->total_amount, 0, ',', '.') }}</span>
                 </div>
 
-                <div class="pt-2 border-t border-slate-100 space-y-1">
+                <div class="pt-1.5 border-t border-slate-100 space-y-1">
                     <div class="flex justify-between text-slate-600">
                         <span>Metode Bayar</span>
                         <span class="font-bold uppercase text-slate-900">{{ $sale->payment?->methodLabel() ?? 'TUNAI' }}</span>
@@ -195,14 +216,14 @@
             </div>
 
             <!-- Footer Struk -->
-            <div class="text-center pt-5 space-y-1 text-xs text-slate-400">
+            <div class="text-center pt-3.5 space-y-0.5 text-[9px] text-slate-400">
                 <p class="font-bold text-slate-700">Terima kasih atas pesanan Anda!</p>
                 @if($sale->isPaid())
-                    <p class="text-[11px] text-emerald-700 font-bold">Pesanan lunas & langsung diproses oleh Dapur.</p>
+                    <p class="text-[8.5px] text-emerald-700 font-bold">Pesanan lunas & langsung diproses oleh Dapur.</p>
                 @else
-                    <p class="text-[11px] text-amber-800 font-bold">Tunjukkan struk ini ke kasir untuk bayar. Pesanan akan dimasak dapur setelah lunas.</p>
+                    <p class="text-[8.5px] text-amber-800 font-bold">Tunjukkan struk ini ke kasir untuk bayar. Pesanan akan dimasak dapur setelah lunas.</p>
                 @endif
-                <p class="text-[11px] font-semibold text-slate-600">Hubungi Toko: {{ $storePhone }}</p>
+                <p class="text-[8.5px] font-semibold text-slate-600">Hubungi Toko: {{ $storePhone }}</p>
             </div>
         </div>
     </div>

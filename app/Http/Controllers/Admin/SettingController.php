@@ -38,6 +38,14 @@ class SettingController extends Controller
             'order_notification_whatsapp' => ['nullable', 'string', 'max:30'],
             'app_logo' => ['nullable', 'image', 'mimes:jpeg,png,jpg,webp,svg', 'max:2048'],
             'remove_logo' => ['nullable', 'boolean'],
+            'payment_qris_image' => ['nullable', 'image', 'mimes:jpeg,png,jpg,webp,svg', 'max:2048'],
+            'remove_qris_image' => ['nullable', 'boolean'],
+            'payment_qris_name' => ['nullable', 'string', 'max:150'],
+            'payment_qris_notes' => ['nullable', 'string', 'max:1000'],
+            'payment_bank_name' => ['nullable', 'string', 'max:100'],
+            'payment_bank_account_number' => ['nullable', 'string', 'max:50'],
+            'payment_bank_account_holder' => ['nullable', 'string', 'max:150'],
+            'payment_bank_notes' => ['nullable', 'string', 'max:1000'],
         ], [
             'store_name.required' => 'Nama toko wajib diisi.',
             'store_phone.required' => 'Nomor kontak telepon / WhatsApp toko wajib diisi.',
@@ -62,6 +70,30 @@ class SettingController extends Controller
         Setting::set('online_welcome_description', $validated['online_welcome_description'], 'textarea', 'online_order');
         Setting::set('attendance_max_distance', (string) $validated['attendance_max_distance'], 'number', 'attendance');
         Setting::set('order_notification_whatsapp', $validated['order_notification_whatsapp'] ?? '', 'text', 'online_order');
+
+        // Pengaturan Metode Pembayaran Meja (QRIS & Transfer Bank)
+        Setting::set('payment_qris_name', $validated['payment_qris_name'] ?? 'Fira Cake QRIS', 'text', 'payment');
+        Setting::set('payment_qris_notes', $validated['payment_qris_notes'] ?? '', 'textarea', 'payment');
+        Setting::set('payment_bank_name', $validated['payment_bank_name'] ?? 'BCA', 'text', 'payment');
+        Setting::set('payment_bank_account_number', $validated['payment_bank_account_number'] ?? '', 'text', 'payment');
+        Setting::set('payment_bank_account_holder', $validated['payment_bank_account_holder'] ?? '', 'text', 'payment');
+        Setting::set('payment_bank_notes', $validated['payment_bank_notes'] ?? '', 'textarea', 'payment');
+
+        // Kelola file gambar QRIS
+        if ($request->boolean('remove_qris_image') || $request->boolean('remove_payment_qris_image')) {
+            $oldQris = Setting::get('payment_qris_image');
+            if ($oldQris && Storage::disk('public')->exists($oldQris)) {
+                Storage::disk('public')->delete($oldQris);
+            }
+            Setting::set('payment_qris_image', null, 'image', 'payment');
+        } elseif ($request->hasFile('payment_qris_image')) {
+            $oldQris = Setting::get('payment_qris_image');
+            if ($oldQris && Storage::disk('public')->exists($oldQris)) {
+                Storage::disk('public')->delete($oldQris);
+            }
+            $qrisPath = $request->file('payment_qris_image')->store('settings', 'public');
+            Setting::set('payment_qris_image', $qrisPath, 'image', 'payment');
+        }
 
         // Kelola file logo toko: hapus logo lama jika diminta atau jika mengunggah file baru
         if ($request->boolean('remove_logo')) {

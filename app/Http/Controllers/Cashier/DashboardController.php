@@ -28,7 +28,7 @@ class DashboardController extends Controller
             return redirect()->route('owner.dashboard');
         }
 
-        $query = Sale::with(['items.product', 'confirmer', 'openBill'])->latest();
+        $query = Sale::with(['items.product', 'confirmer', 'openBill', 'payment'])->latest();
 
         // Pesanan Online wajib lunas terlebih dahulu (via Midtrans) sebelum masuk ke antrean kasir
         $query->where(function ($q) {
@@ -170,7 +170,7 @@ class DashboardController extends Controller
             'reference_number' => ['nullable', 'string', 'max:100'],
         ]);
 
-        $method = $validated['payment_method'] ?? 'cash';
+        $method = $validated['payment_method'] ?? ($sale->payment?->method ?? 'cash');
         $amountPaid = (float) $sale->total_amount;
         $amountTendered = isset($validated['amount_tendered']) && $validated['amount_tendered'] > 0
             ? (float) $validated['amount_tendered']
@@ -203,7 +203,8 @@ class DashboardController extends Controller
                     'amount_tendered' => $amountTendered,
                     'change_amount' => $changeAmount,
                     'status' => 'paid',
-                    'reference_number' => $validated['reference_number'] ?? null,
+                    'payment_proof' => $sale->payment_proof,
+                    'reference_number' => $validated['reference_number'] ?? ($sale->payment?->reference_number ?? null),
                     'verified_by' => $user->id,
                     'paid_at' => now(),
                 ]

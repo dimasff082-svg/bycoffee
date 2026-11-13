@@ -18,6 +18,7 @@ class Payment extends Model
         'change_amount',
         'status',
         'reference_number',
+        'payment_proof',
         'verified_by',
         'paid_at',
     ];
@@ -51,5 +52,14 @@ class Payment extends Model
             'midtrans' => 'Midtrans (Online)',
             default => strtoupper($this->method),
         };
+    }
+
+    public function getPaymentProofUrlAttribute(): ?string
+    {
+        if (! empty($this->payment_proof)) {
+            return asset('storage/'.$this->payment_proof);
+        }
+
+        return null;
     }
 }

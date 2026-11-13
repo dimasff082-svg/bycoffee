@@ -70,6 +70,7 @@ Route::prefix('order')->name('order.')->group(function () {
     Route::post('/{table_number}/open-bill/snap-token', [CustomerOrderController::class, 'getOpenBillSnapToken'])->name('open_bill_snap_token');
     Route::post('/{table_number}/open-bill/midtrans-success', [CustomerOrderController::class, 'markOpenBillMidtransSuccess'])->name('open_bill_midtrans_success');
     Route::get('/{table_number}/status/{sale}', [CustomerOrderController::class, 'status'])->name('status');
+    Route::get('/{table_number}/status/{sale}/check', [CustomerOrderController::class, 'checkStatus'])->name('check_status');
     Route::post('/{table_number}/status/{sale}/midtrans-success', [CustomerOrderController::class, 'markMidtransSuccess'])->name('midtrans_success');
     Route::post('/{table_number}/status/{sale}/snap-token', [CustomerOrderController::class, 'getSnapToken'])->name('snap_token');
 });

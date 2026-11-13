@@ -37,6 +37,7 @@ class AppServiceProvider extends ServiceProvider
                 'storeEmail' => $settings['store_email'] ?? Setting::DEFAULTS['store_email'],
                 'storeAddress' => $settings['store_address'] ?? Setting::DEFAULTS['store_address'],
                 'storeHours' => $settings['store_hours'] ?? Setting::DEFAULTS['store_hours'],
+                'paymentQrisImageUrl' => Setting::getQrisImageUrl(),
             ]);
         });
     }

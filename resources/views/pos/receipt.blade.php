@@ -2,7 +2,23 @@
 
 @push('styles')
 <style>
+@page {
+    size: 58mm auto;
+    margin: 0;
+}
 @media print {
+    * {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+    html, body {
+        width: 58mm !important;
+        min-width: 58mm !important;
+        max-width: 58mm !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        background: #ffffff !important;
+    }
     body * {
         visibility: hidden;
     }
@@ -13,12 +29,17 @@
         position: absolute;
         left: 0;
         top: 0;
-        width: 100%;
-        max-width: 80mm;
-        margin: 0 auto;
-        padding: 10px;
+        width: 58mm !important;
+        max-width: 58mm !important;
+        min-width: 58mm !important;
+        margin: 0 !important;
+        padding: 1.5mm 1.5mm !important; /* Margin sangat sedikit sesuai ukuran thermal 58mm */
         box-shadow: none !important;
         border: none !important;
+        border-radius: 0 !important;
+        background: #ffffff !important;
+        color: #000000 !important;
+        box-sizing: border-box !important;
     }
     .no-print {
         display: none !important;
@@ -39,7 +60,7 @@
             </span>
             <div>
                 <h2 class="text-xl font-black text-slate-800">Transaksi Berhasil!</h2>
-                <p class="text-xs text-slate-500">Struk digital telah dibuat dan tersimpan aman di sistem.</p>
+                <p class="text-xs text-slate-500">Struk digital 58mm telah dibuat dan tersimpan aman di sistem.</p>
             </div>
         </div>
 
@@ -49,7 +70,7 @@
                 <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
                 </svg>
-                Cetak Struk
+                Cetak Struk (58mm)
             </button>
             @if(auth()->user()->isCashier() || auth()->user()->isAdmin())
                 <a href="{{ route('takeaway.index') }}"
@@ -71,20 +92,20 @@
         </div>
     </div>
 
-    <!-- Digital Receipt Card -->
-    <div id="printable-receipt" class="bg-white rounded-3xl border border-slate-200/90 shadow-xl p-8 font-sans max-w-md mx-auto">
+    <!-- Digital Receipt Card (Ukuran 58mm dengan margin minimal) -->
+    <div id="printable-receipt" class="bg-white rounded-2xl border border-slate-200/90 shadow-xl p-3.5 sm:p-4 font-sans w-full max-w-[340px] mx-auto text-slate-800">
         <!-- Store Header -->
-        <div class="text-center pb-5 border-b border-dashed border-slate-300">
-            <img src="{{ $storeLogo }}" alt="{{ $storeName }}" class="w-16 h-16 mx-auto object-contain mb-2 drop-shadow-sm" onerror="this.src='{{ asset('images/default-cake.png') }}'">
-            <h3 class="font-extrabold text-lg text-slate-900 tracking-tight uppercase leading-tight">
+        <div class="text-center pb-3 border-b border-dashed border-slate-300">
+            <img src="{{ $storeLogo }}" alt="{{ $storeName }}" class="w-11 h-11 mx-auto object-contain mb-1.5 drop-shadow-xs" onerror="this.src='{{ asset('images/default-cake.png') }}'">
+            <h3 class="font-extrabold text-sm text-slate-900 tracking-tight uppercase leading-tight">
                 <span>{{ $storeNameLine1 }}</span>
                 @if(!empty($storeNameLine2))
-                    <span class="block text-sm font-bold text-slate-700 mt-0.5">{{ $storeNameLine2 }}</span>
+                    <span class="block text-xs font-bold text-slate-700 mt-0.5">{{ $storeNameLine2 }}</span>
                 @endif
             </h3>
-            <p class="text-xs text-slate-500 mt-1">{{ $storeAddress }}</p>
-            <p class="text-xs font-semibold text-slate-700 mt-0.5">Telp / WA: {{ $storePhone }}</p>
-            <p class="text-xs text-slate-400 mt-0.5">Struk Resmi Pembelian &bull; Jam Buka: {{ $storeHours }}</p>
+            <p class="text-[9.5px] text-slate-500 mt-0.5 leading-snug">{{ $storeAddress }}</p>
+            <p class="text-[9.5px] font-semibold text-slate-700 mt-0.5">Telp / WA: {{ $storePhone }}</p>
+            <p class="text-[9px] text-slate-400 mt-0.5">Struk Resmi Pembelian &bull; Jam: {{ $storeHours }}</p>
         </div>
 
         <!-- Meta Info -->
@@ -99,13 +120,13 @@
         @endphp
 
         @if($isOpenBill)
-            <div class="mb-3 px-3 py-2 rounded-xl bg-amber-50 border border-amber-200 text-center font-mono text-[11px] text-amber-900">
-                <span class="font-bold uppercase tracking-wider block">Nota Tagihan Open Bill Meja</span>
-                <span>Meja: <strong>{{ $sale->openBill->table_number }}</strong> &bull; {{ $receiptSales->count() }} Pesanan Tergabung</span>
+            <div class="my-2 px-2.5 py-1.5 rounded-xl bg-amber-50 border border-amber-200 text-center font-mono text-[10px] text-amber-900">
+                <span class="font-bold uppercase tracking-wider block">Nota Tagihan Open Bill</span>
+                <span>Meja: <strong>{{ $sale->openBill->table_number }}</strong> &bull; {{ $receiptSales->count() }} Order Tergabung</span>
             </div>
         @endif
 
-        <div class="py-4 border-b border-dashed border-slate-300 text-xs space-y-1.5 font-mono">
+        <div class="py-2.5 border-b border-dashed border-slate-300 text-[10px] space-y-1 font-mono">
             <div class="flex justify-between">
                 <span class="text-slate-400">No. {{ $isOpenBill ? 'Bill / Sesi' : 'Transaksi' }}</span>
                 <span class="font-bold text-slate-900">{{ $isOpenBill ? $sale->openBill->bill_number : $sale->transaction_number }}</span>
@@ -113,11 +134,11 @@
             @if($isOpenBill)
                 <div class="flex justify-between">
                     <span class="text-slate-400">Daftar Order</span>
-                    <span class="text-slate-700 font-bold">{{ $receiptSales->pluck('transaction_number')->implode(', ') }}</span>
+                    <span class="text-slate-700 font-bold truncate max-w-[170px] text-right">{{ $receiptSales->pluck('transaction_number')->implode(', ') }}</span>
                 </div>
             @endif
             <div class="flex justify-between">
-                <span class="text-slate-400">Tipe Pesanan / Meja</span>
+                <span class="text-slate-400">Tipe / Meja</span>
                 <span class="text-slate-700 font-bold">
                     @if($sale->table_number === 'TAKEAWAY')
                         <span class="text-purple-700 font-black">Bawa Pulang (Takeaway)</span>
@@ -135,7 +156,7 @@
             @if($sale->customer_name || $sale->openBill?->customer_name)
                 <div class="flex justify-between">
                     <span class="text-slate-400">Pelanggan</span>
-                    <span class="text-slate-700 font-semibold">{{ $sale->customer_name ?: $sale->openBill->customer_name }}</span>
+                    <span class="text-slate-700 font-semibold truncate max-w-[170px] text-right">{{ $sale->customer_name ?: $sale->openBill->customer_name }}</span>
                 </div>
             @endif
             @if($sale->customer_phone)
@@ -150,7 +171,7 @@
             </div>
             <div class="flex justify-between">
                 <span class="text-slate-400">Kasir</span>
-                <span class="text-slate-700 font-semibold">{{ $receiptCashier }}</span>
+                <span class="text-slate-700 font-semibold truncate max-w-[170px] text-right">{{ $receiptCashier }}</span>
             </div>
             <div class="flex justify-between">
                 <span class="text-slate-400">Status</span>
@@ -158,46 +179,46 @@
             </div>
         </div>
 
-        <!-- Items Table -->
-        <div class="py-4 border-b border-dashed border-slate-300">
-            <table class="w-full text-xs">
+        <!-- Items Table (Format Ringkas 58mm) -->
+        <div class="py-2.5 border-b border-dashed border-slate-300">
+            <table class="w-full text-[10px] leading-tight">
                 <thead>
-                    <tr class="text-slate-400 text-left font-mono border-b border-slate-100 pb-2">
-                        <th class="pb-1.5">Item</th>
-                        <th class="pb-1.5 text-center">Qty</th>
-                        <th class="pb-1.5 text-right">Harga</th>
-                        <th class="pb-1.5 text-right">Total</th>
+                    <tr class="text-slate-400 text-left font-mono border-b border-slate-100 pb-1">
+                        <th class="pb-1 text-left font-bold">Item</th>
+                        <th class="pb-1 text-center font-bold w-6">Qty</th>
+                        <th class="pb-1 text-right font-bold w-12">Harga</th>
+                        <th class="pb-1 text-right font-bold w-14">Total</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100 font-mono">
                     @foreach($receiptItems as $item)
                         <tr>
-                            <td class="py-2 pr-1">
+                            <td class="py-1.5 pr-1">
                                 <div class="font-bold text-slate-900 leading-tight">{{ $item->product_name_snapshot }}</div>
-                                <div class="text-[10px] text-slate-400">{{ $item->sku_snapshot }}</div>
+                                <div class="text-[8.5px] text-slate-400">{{ $item->sku_snapshot }}</div>
                             </td>
-                            <td class="py-2 text-center text-slate-700">{{ $item->quantity }}</td>
-                            <td class="py-2 text-right text-slate-600">{{ number_format($item->unit_price, 0, ',', '.') }}</td>
-                            <td class="py-2 text-right font-bold text-slate-900">{{ number_format($item->line_total, 0, ',', '.') }}</td>
+                            <td class="py-1.5 text-center text-slate-700 align-top">{{ $item->quantity }}</td>
+                            <td class="py-1.5 text-right text-slate-600 align-top">{{ number_format($item->unit_price, 0, ',', '.') }}</td>
+                            <td class="py-1.5 text-right font-bold text-slate-900 align-top">{{ number_format($item->line_total, 0, ',', '.') }}</td>
                         </tr>
                     @endforeach
                 </tbody>
             </table>
         </div>
 
-        <!-- Summary Totals -->
-        <div class="py-4 border-b border-dashed border-slate-300 text-xs font-mono space-y-2">
+        <!-- Summary Totals (58mm) -->
+        <div class="py-2.5 border-b border-dashed border-slate-300 text-[10px] font-mono space-y-1.5">
             <div class="flex justify-between text-slate-600">
                 <span>Subtotal Item</span>
                 <span>Rp {{ number_format($receiptSubtotal, 0, ',', '.') }}</span>
             </div>
 
-            <div class="flex justify-between text-base font-black text-slate-900 pt-2 border-t border-slate-100">
+            <div class="flex justify-between text-xs font-black text-slate-900 pt-1.5 border-t border-slate-100">
                 <span>TOTAL TAGIHAN</span>
-                <span class="text-emerald-700">Rp {{ number_format($receiptTotal, 0, ',', '.') }}</span>
+                <span class="text-emerald-700 text-sm">Rp {{ number_format($receiptTotal, 0, ',', '.') }}</span>
             </div>
 
-            <div class="pt-2 border-t border-slate-100 space-y-1">
+            <div class="pt-1.5 border-t border-slate-100 space-y-1">
                 <div class="flex justify-between text-slate-600">
                     <span>Metode Bayar</span>
                     <span class="font-bold uppercase">{{ $receiptPayment?->methodLabel() ?? 'TUNAI' }}</span>
@@ -214,10 +235,10 @@
         </div>
 
         <!-- Footer Thank You Note -->
-        <div class="text-center pt-6 space-y-1 text-xs text-slate-400">
+        <div class="text-center pt-3.5 space-y-0.5 text-[9px] text-slate-400">
             <p class="font-bold text-slate-700">Terima kasih atas kunjungan Anda!</p>
-            <p class="text-[11px] font-semibold text-slate-600">Hubungi Toko: {{ $storePhone }}</p>
-            <p class="text-[11px]">Barang yang sudah dibeli tidak dapat ditukar/dikembalikan tanpa bukti struk ini.</p>
+            <p class="text-[8.5px] font-semibold text-slate-600">Hubungi Toko: {{ $storePhone }}</p>
+            <p class="text-[8px] leading-tight text-slate-400">Barang yang sudah dibeli tidak dapat ditukar/dikembalikan tanpa bukti struk ini.</p>
         </div>
     </div>
 </div>

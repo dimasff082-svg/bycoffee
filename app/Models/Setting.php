@@ -58,6 +58,13 @@ class Setting extends Model
         'attendance_max_distance' => '15',
         'order_notification_whatsapp' => '',
         'app_logo' => null,
+        'payment_qris_image' => null,
+        'payment_qris_name' => 'Fira Cake QRIS',
+        'payment_qris_notes' => 'Scan kode QRIS di atas untuk melakukan pembayaran langsung.',
+        'payment_bank_name' => 'BCA',
+        'payment_bank_account_number' => '1234567890',
+        'payment_bank_account_holder' => 'Fira Cake Bakery',
+        'payment_bank_notes' => 'Transfer sesuai nominal tagihan ke nomor rekening di atas.',
     ];
 
     /**
@@ -81,6 +88,19 @@ class Setting extends Model
         }
 
         return asset('images/logo.png');
+    }
+
+    /**
+     * Mengambil URL gambar kode QRIS resmi toko (jika telah diunggah oleh admin).
+     */
+    public static function getQrisImageUrl(): ?string
+    {
+        $image = static::get('payment_qris_image');
+        if (! empty($image)) {
+            return asset('storage/'.$image);
+        }
+
+        return null;
     }
 
     /**

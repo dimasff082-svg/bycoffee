@@ -278,6 +278,7 @@
                         <th class="py-3.5 px-6">Meja</th>
                         <th class="py-3.5 px-6 text-right">Total</th>
                         <th class="py-3.5 px-6 text-center">Pembayaran</th>
+                        <th class="py-3.5 px-6 text-center">Bukti Bayar</th>
                         <th class="py-3.5 px-6 text-center">Status Dapur</th>
                         <th class="py-3.5 px-6 text-right">Aksi</th>
                     </tr>
@@ -368,6 +369,21 @@
                                 @endif
                             </td>
 
+                            <!-- Bukti Pembayaran -->
+                            <td class="py-4 px-6 text-center">
+                                @if($sale->hasPaymentProof())
+                                    <button type="button"
+                                        onclick="openCashierProofModal('{{ $sale->payment_proof_url }}', '{{ $sale->transaction_number }}', '{{ $sale->table_number ?? 'M001' }}', '{{ (float)$sale->total_amount }}', '{{ $sale->payment?->methodLabel() ?? 'QRIS / Transfer' }}', {{ $sale->isUnpaid() ? 'true' : 'false' }}, '{{ $sale->id }}', '{{ $sale->payment?->method ?? 'qris' }}')"
+                                        class="group inline-flex items-center gap-2 px-2.5 py-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 shadow-2xs transition transform hover:scale-105 active:scale-95"
+                                        title="Klik untuk melihat bukti pembayaran">
+                                        <img src="{{ $sale->payment_proof_url }}" alt="Bukti" class="w-7 h-7 rounded-lg object-cover border border-amber-200 shrink-0">
+                                        <span class="text-xs font-bold">Lihat Bukti</span>
+                                    </button>
+                                @else
+                                    <span class="text-xs text-slate-400 font-medium">-</span>
+                                @endif
+                            </td>
+
                             <!-- Status Dapur (Informatif untuk Kasir: Menunggu, Diproses, Selesai) -->
                             <td class="py-4 px-6 text-center">
                                 @if($sale->order_status === 'completed')
@@ -416,7 +432,7 @@
                                     @if($sale->isUnpaid())
                                         <!-- Tombol Konfirmasi Pembayaran -->
                                         <button type="button"
-                                            onclick="openConfirmModal('{{ $sale->id }}', '{{ $sale->transaction_number }}', '{{ $sale->table_number ?? 'M001' }}', '{{ (float)$sale->total_amount }}')"
+                                            onclick="openConfirmModal('{{ $sale->id }}', '{{ $sale->transaction_number }}', '{{ $sale->table_number ?? 'M001' }}', '{{ (float)$sale->total_amount }}', '{{ $sale->payment_proof_url ?? '' }}', '{{ $sale->payment?->method ?? 'cash' }}')"
                                             class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold shadow-sm transition transform hover:scale-105 active:scale-95">
                                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -442,7 +458,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="6" class="py-12 text-center text-slate-400">
+                            <td colspan="7" class="py-12 text-center text-slate-400">
                                 <svg class="w-12 h-12 mx-auto mb-2 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                                 </svg>
@@ -486,6 +502,20 @@
                     <div id="modalTotalFormatted" class="text-3xl font-black text-slate-900">
                         Rp 0
                     </div>
+                </div>
+
+                <!-- Bukti Pembayaran Pelanggan (jika ada) -->
+                <div id="confirmProofBanner" class="hidden p-3 rounded-2xl bg-amber-50 border border-amber-200 flex items-center justify-between gap-3">
+                    <div class="flex items-center gap-2.5 min-w-0">
+                        <img id="confirmProofThumb" src="" alt="Bukti" class="w-10 h-10 rounded-xl object-cover border border-amber-300 shrink-0">
+                        <div class="truncate">
+                            <span class="text-[10px] font-bold text-amber-800 uppercase tracking-wider block">Bukti Pembayaran Pelanggan</span>
+                            <span class="text-xs text-amber-900 font-semibold truncate block">Terlampir oleh pelanggan</span>
+                        </div>
+                    </div>
+                    <button type="button" onclick="viewProofFromConfirm()" class="shrink-0 px-2.5 py-1.5 rounded-lg bg-white border border-amber-300 text-amber-900 text-xs font-bold hover:bg-amber-100 transition shadow-2xs">
+                        Perbesar
+                    </button>
                 </div>
 
                 <div>
@@ -556,6 +586,63 @@
                 </button>
             </div>
         </form>
+    </div>
+</div>
+
+<!-- MODAL LIHAT BUKTI PEMBAYARAN KASIR -->
+<div id="cashierProofModal" class="fixed inset-0 z-50 hidden bg-black/75 backdrop-blur-xs flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-lg w-full shadow-2xl overflow-hidden border border-slate-100 transform transition-all flex flex-col max-h-[90vh]">
+        <div class="p-5 border-b border-slate-100 flex items-center justify-between bg-gradient-to-r from-amber-600 to-amber-700 text-white">
+            <div>
+                <span class="text-[10px] font-bold uppercase tracking-wider text-amber-200">Bukti Pembayaran Pelanggan</span>
+                <h3 id="proofModalOrderNumber" class="text-lg font-black mt-0.5">ORD001</h3>
+            </div>
+            <div class="flex items-center gap-2">
+                <span id="proofModalTableNumber" class="px-2.5 py-1 rounded-lg bg-white/20 text-white font-extrabold text-xs backdrop-blur-md">
+                    Meja M001
+                </span>
+                <button type="button" onclick="closeCashierProofModal()" class="text-white/80 hover:text-white p-1 rounded-lg">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <div class="p-4 bg-slate-50 border-b border-slate-100 flex items-center justify-between text-xs">
+            <div>
+                <span class="text-slate-500 font-medium block">Total Tagihan:</span>
+                <span id="proofModalTotal" class="text-base font-black text-slate-900">Rp 0</span>
+            </div>
+            <div class="text-right">
+                <span class="text-slate-500 font-medium block">Metode Pelanggan:</span>
+                <span id="proofModalMethod" class="inline-block px-2 py-0.5 rounded-md bg-amber-100 text-amber-900 font-bold text-[11px] mt-0.5">QRIS</span>
+            </div>
+        </div>
+
+        <div class="p-4 overflow-y-auto flex-1 flex flex-col items-center justify-center bg-slate-900/5 min-h-[300px]">
+            <a id="proofModalLink" href="" target="_blank" title="Klik untuk membuka ukuran penuh di tab baru" class="block max-w-full">
+                <img id="proofModalImage" src="" alt="Bukti Pembayaran" class="max-h-[55vh] w-auto max-w-full rounded-2xl object-contain shadow-md border border-slate-200">
+            </a>
+            <p class="text-[11px] text-slate-400 mt-2 flex items-center gap-1">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                </svg>
+                Klik gambar untuk membuka ukuran penuh di tab baru
+            </p>
+        </div>
+
+        <div class="p-4 bg-slate-50 border-t border-slate-100 flex items-center justify-between gap-3">
+            <button type="button" onclick="closeCashierProofModal()" class="px-4 py-2.5 rounded-xl text-slate-600 hover:bg-slate-200 text-xs font-bold transition">
+                Tutup
+            </button>
+            <button type="button" id="proofModalConfirmBtn" onclick="confirmFromProof()" class="px-5 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-black shadow-md transition flex items-center gap-1.5 transform hover:scale-105 active:scale-95">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                </svg>
+                Konfirmasi Pembayaran Ini
+            </button>
+        </div>
     </div>
 </div>
 
@@ -651,6 +738,8 @@
 
 <script>
     let currentOrderTotal = 0;
+    let currentProofData = null;
+    let proofModalTargetSale = null;
 
     // Cache of sales for Detail Modal
     const salesData = @json($sales->items());
@@ -673,7 +762,7 @@
         calculateChange();
     }
 
-    function openConfirmModal(saleId, orderNumber, tableNumber, totalAmount) {
+    function openConfirmModal(saleId, orderNumber, tableNumber, totalAmount, proofUrl = '', paymentMethod = 'cash') {
         currentOrderTotal = parseFloat(totalAmount);
         document.getElementById('confirmForm').action = "/cashier/orders/" + saleId + "/confirm-payment";
         document.getElementById('modalOrderNumber').innerText = orderNumber;
@@ -681,19 +770,95 @@
         document.getElementById('modalTotalFormatted').innerText = "Rp " + new Intl.NumberFormat('id-ID').format(currentOrderTotal);
         document.getElementById('labelExactAmount').innerText = "Rp " + new Intl.NumberFormat('id-ID').format(currentOrderTotal);
         
-        // Kolom jumlah uang yang diterima dikosongkan secara default sesuai instruksi user
-        document.getElementById('inputTendered').value = '';
-        document.getElementById('rawAmountTendered').value = '';
-        document.getElementById('labelChange').innerText = "Rp 0";
+        // Handle Bukti Pembayaran Banner di modal konfirmasi
+        const proofBanner = document.getElementById('confirmProofBanner');
+        const proofThumb = document.getElementById('confirmProofThumb');
+        if (proofUrl) {
+            proofThumb.src = proofUrl;
+            proofBanner.classList.remove('hidden');
+            currentProofData = {
+                url: proofUrl,
+                trxNo: orderNumber,
+                tableNo: tableNumber,
+                totalAmount: totalAmount,
+                method: paymentMethod || 'qris',
+                saleId: saleId
+            };
+        } else {
+            proofBanner.classList.add('hidden');
+            currentProofData = null;
+        }
+
+        // Set radio button payment_method sesuai pilihan pelanggan atau default kasir
+        const validMethods = ['cash', 'qris', 'transfer'];
+        const chosenMethod = validMethods.includes(paymentMethod) ? paymentMethod : 'cash';
+        const radio = document.querySelector(`input[name="payment_method"][value="${chosenMethod}"]`);
+        if (radio) {
+            radio.checked = true;
+        }
+
+        if (chosenMethod === 'cash') {
+            toggleTenderedInput(true);
+            document.getElementById('inputTendered').value = '';
+            document.getElementById('rawAmountTendered').value = '';
+            document.getElementById('labelChange').innerText = "Rp 0";
+            setTimeout(() => {
+                document.getElementById('inputTendered').focus();
+            }, 100);
+        } else {
+            toggleTenderedInput(false);
+        }
 
         document.getElementById('confirmModal').classList.remove('hidden');
-        setTimeout(() => {
-            document.getElementById('inputTendered').focus();
-        }, 100);
     }
 
     function closeConfirmModal() {
         document.getElementById('confirmModal').classList.add('hidden');
+    }
+
+    function openCashierProofModal(url, trxNo, tableNo, totalAmount, methodLabel, isUnpaid, saleId, rawMethod) {
+        document.getElementById('proofModalOrderNumber').innerText = trxNo;
+        document.getElementById('proofModalTableNumber').innerText = "Meja " + tableNo;
+        document.getElementById('proofModalTotal').innerText = "Rp " + new Intl.NumberFormat('id-ID').format(parseFloat(totalAmount));
+        document.getElementById('proofModalMethod').innerText = methodLabel;
+        document.getElementById('proofModalImage').src = url;
+        document.getElementById('proofModalLink').href = url;
+
+        proofModalTargetSale = {
+            id: saleId,
+            orderNumber: trxNo,
+            tableNumber: tableNo,
+            totalAmount: totalAmount,
+            proofUrl: url,
+            method: rawMethod
+        };
+
+        const confirmBtn = document.getElementById('proofModalConfirmBtn');
+        if (isUnpaid) {
+            confirmBtn.classList.remove('hidden');
+        } else {
+            confirmBtn.classList.add('hidden');
+        }
+
+        document.getElementById('cashierProofModal').classList.remove('hidden');
+    }
+
+    function closeCashierProofModal() {
+        document.getElementById('cashierProofModal').classList.add('hidden');
+    }
+
+    function confirmFromProof() {
+        if (!proofModalTargetSale) return;
+        const target = proofModalTargetSale;
+        closeCashierProofModal();
+        openConfirmModal(target.id, target.orderNumber, target.tableNumber, target.totalAmount, target.proofUrl, target.method);
+    }
+
+    function viewProofFromConfirm() {
+        if (!currentProofData) return;
+        const p = currentProofData;
+        closeConfirmModal();
+        openCashierProofModal(p.url, p.trxNo, p.tableNo, p.totalAmount, (p.method === 'transfer' ? 'Transfer Bank' : 'QRIS'), true, p.saleId, p.method);
     }
 
     function toggleTenderedInput(isCash) {

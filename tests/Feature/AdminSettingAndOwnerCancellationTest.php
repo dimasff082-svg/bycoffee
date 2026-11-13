@@ -522,4 +522,71 @@ class AdminSettingAndOwnerCancellationTest extends TestCase
         $settingsView->assertSee('<textarea name="store_name"', false);
         $settingsView->assertSee('Mendukung 2 Baris (Tekan Enter)');
     }
+
+    public function test_admin_can_update_qris_and_bank_transfer_payment_settings(): void
+    {
+        Storage::fake('public');
+        $qrisImg = UploadedFile::fake()->image('qris-custom.png', 400, 400);
+
+        $response = $this->actingAs($this->admin)->put(route('admin.settings.update'), [
+            'store_name' => 'By Coffee',
+            'store_phone' => '081234567890',
+            'store_address' => 'Jl. Boulevard No. 10',
+            'store_hours' => '08:00 - 23:00',
+            'online_welcome_title' => 'Selamat Datang',
+            'online_welcome_description' => 'Ngopi nikmat setiap hari.',
+            'attendance_max_distance' => '50',
+            'payment_qris_name' => 'BY COFFEE OFFICIAL STORE',
+            'payment_qris_notes' => 'Scan QRIS via BCA, Gopay, OVO, Dana',
+            'payment_bank_name' => 'BCA (Bank Central Asia)',
+            'payment_bank_account_number' => '8820192831',
+            'payment_bank_account_holder' => 'PT BY COFFEE INDONESIA',
+            'payment_bank_notes' => 'Harap cantumkan nomor meja pada berita transfer',
+            'payment_qris_image' => $qrisImg,
+        ]);
+
+        $response->assertRedirect(route('admin.settings.index'));
+        $response->assertSessionHas('success');
+
+        $this->assertEquals('BY COFFEE OFFICIAL STORE', Setting::get('payment_qris_name'));
+        $this->assertEquals('Scan QRIS via BCA, Gopay, OVO, Dana', Setting::get('payment_qris_notes'));
+        $this->assertEquals('BCA (Bank Central Asia)', Setting::get('payment_bank_name'));
+        $this->assertEquals('8820192831', Setting::get('payment_bank_account_number'));
+        $this->assertEquals('PT BY COFFEE INDONESIA', Setting::get('payment_bank_account_holder'));
+        $this->assertEquals('Harap cantumkan nomor meja pada berita transfer', Setting::get('payment_bank_notes'));
+
+        $savedQrisPath = Setting::get('payment_qris_image');
+        $this->assertNotNull($savedQrisPath);
+        Storage::disk('public')->assertExists($savedQrisPath);
+        $this->assertNotNull(Setting::getQrisImageUrl());
+
+        // Halaman pengaturan menampilkan input dan nilai yang tersimpan
+        $page = $this->actingAs($this->admin)->get(route('admin.settings.index'));
+        $page->assertOk();
+        $page->assertSee('Metode Pembayaran Pesanan Meja');
+        $page->assertSee('BY COFFEE OFFICIAL STORE');
+        $page->assertSee('8820192831');
+    }
+
+    public function test_admin_can_remove_custom_qris_image(): void
+    {
+        Storage::fake('public');
+        $file = UploadedFile::fake()->image('qris-old.png');
+        $path = $file->store('qris', 'public');
+        Setting::set('payment_qris_image', $path);
+
+        $this->actingAs($this->admin)->put(route('admin.settings.update'), [
+            'store_name' => 'By Coffee',
+            'store_phone' => '081234567890',
+            'store_address' => 'Jl. Boulevard No. 10',
+            'store_hours' => '08:00 - 23:00',
+            'online_welcome_title' => 'Selamat Datang',
+            'online_welcome_description' => 'Ngopi nikmat.',
+            'attendance_max_distance' => '50',
+            'remove_qris_image' => 1,
+        ])->assertRedirect(route('admin.settings.index'));
+
+        $this->assertNull(Setting::get('payment_qris_image'));
+        Storage::disk('public')->assertMissing($path);
+    }
 }

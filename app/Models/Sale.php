@@ -25,6 +25,7 @@ class Sale extends Model
         'status',
         'order_status',
         'payment_status',
+        'payment_proof',
         'snap_token',
         'open_bill_id',
         'confirmed_by',
@@ -139,5 +140,19 @@ class Sale extends Model
             'cancelled' => 'Dibatalkan',
             default => 'Belum Dibayar',
         };
+    }
+
+    public function getPaymentProofUrlAttribute(): ?string
+    {
+        if (! empty($this->payment_proof)) {
+            return asset('storage/'.$this->payment_proof);
+        }
+
+        return null;
+    }
+
+    public function hasPaymentProof(): bool
+    {
+        return ! empty($this->payment_proof);
     }
 }
