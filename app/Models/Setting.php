@@ -56,6 +56,9 @@ class Setting extends Model
         'online_welcome_title' => 'Selamat Datang di Fira Cake!',
         'online_welcome_description' => 'Nikmati aneka pilihan roti, bolu fresh, kue tart, dan pastry premium kualitas terbaik kami langsung dibuat segar setiap hari.',
         'attendance_max_distance' => '15',
+        'attendance_office_name' => 'Kantor Fira Cake (Ruko Ruby Masale)',
+        'attendance_office_latitude' => '-5.155325',
+        'attendance_office_longitude' => '119.441929',
         'order_notification_whatsapp' => '',
         'app_logo' => null,
         'payment_qris_image' => null,
@@ -75,6 +78,34 @@ class Setting extends Model
         $val = static::get('attendance_max_distance', 15.0);
 
         return is_numeric($val) && (float) $val > 0 ? (float) $val : 15.0;
+    }
+
+    /**
+     * Mengambil titik koordinat Latitude kantor / toko untuk absensi.
+     */
+    public static function getAttendanceOfficeLatitude(): float
+    {
+        $val = static::get('attendance_office_latitude', -5.155325);
+
+        return is_numeric($val) ? (float) $val : -5.155325;
+    }
+
+    /**
+     * Mengambil titik koordinat Longitude kantor / toko untuk absensi.
+     */
+    public static function getAttendanceOfficeLongitude(): float
+    {
+        $val = static::get('attendance_office_longitude', 119.441929);
+
+        return is_numeric($val) ? (float) $val : 119.441929;
+    }
+
+    /**
+     * Mengambil nama label kantor / lokasi absensi.
+     */
+    public static function getAttendanceOfficeName(): string
+    {
+        return (string) static::get('attendance_office_name', 'Kantor Fira Cake (Ruko Ruby Masale)');
     }
 
     /**

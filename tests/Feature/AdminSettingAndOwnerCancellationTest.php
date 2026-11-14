@@ -264,6 +264,59 @@ class AdminSettingAndOwnerCancellationTest extends TestCase
         $rejectedSubmit->assertSessionHasErrors(['attendance']);
     }
 
+    public function test_admin_can_update_attendance_office_location_and_it_is_enforced(): void
+    {
+        // 1. Admin updates office coordinates to a new location in Makassar (Pantai Losari: -5.144444, 119.408888)
+        $newLat = -5.144444;
+        $newLng = 119.408888;
+        $newOfficeName = 'Outlet Baru Losari';
+
+        $response = $this->actingAs($this->admin)->put(route('admin.settings.update'), [
+            'store_name' => 'Fira Cake',
+            'store_phone' => '082131117996',
+            'store_address' => 'Jl. Pantai Losari',
+            'store_hours' => '08:00 - 22:00',
+            'online_welcome_title' => 'Welcome',
+            'online_welcome_description' => 'Description',
+            'attendance_max_distance' => '20',
+            'attendance_office_name' => $newOfficeName,
+            'attendance_office_latitude' => (string) $newLat,
+            'attendance_office_longitude' => (string) $newLng,
+        ]);
+
+        $response->assertRedirect(route('admin.settings.index'));
+        $this->assertEquals($newOfficeName, Setting::getAttendanceOfficeName());
+        $this->assertEquals($newLat, Setting::getAttendanceOfficeLatitude());
+        $this->assertEquals($newLng, Setting::getAttendanceOfficeLongitude());
+
+        // 2. Attendance index renders the new office coordinates
+        $indexResponse = $this->actingAs($this->cashier)->get(route('attendance.index'));
+        $indexResponse->assertStatus(200);
+        $indexResponse->assertSee((string) $newLat);
+        $indexResponse->assertSee((string) $newLng);
+
+        // 3. User checking in at the old office (-5.155325, 119.441929) is now ~3.8 km away -> Rejected
+        $fakeBase64 = 'data:image/png;base64,'.base64_encode('fake-image-binary-data');
+        $oldOfficeSubmit = $this->actingAs($this->cashier)->post(route('attendance.store'), [
+            'type' => 'check_in',
+            'latitude' => -5.155325,
+            'longitude' => 119.441929,
+            'photo_camera' => $fakeBase64,
+        ]);
+        $oldOfficeSubmit->assertSessionHasErrors(['attendance']);
+
+        // 4. User checking in at the new office (-5.144444, 119.408888) -> Accepted
+        $newOfficeSubmit = $this->actingAs($this->cashier)->post(route('attendance.store'), [
+            'type' => 'check_in',
+            'latitude' => $newLat,
+            'longitude' => $newLng,
+            'photo_camera' => $fakeBase64,
+            'notes' => 'Presensi di kantor baru',
+        ]);
+        $newOfficeSubmit->assertRedirect();
+        $newOfficeSubmit->assertSessionHas('success');
+    }
+
     public function test_admin_and_owner_can_filter_transactions_by_status(): void
     {
         $paidSale = Sale::factory()->create([

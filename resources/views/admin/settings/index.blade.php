@@ -311,7 +311,7 @@
                     </div>
                 </div>
 
-                <!-- Card 3: Pengaturan Presensi & Radius Kehadiran Karyawan -->
+                <!-- Card 3: Lokasi & Radius Presensi Kehadiran Karyawan -->
                 <div class="bg-white rounded-2xl border border-[#e5dfd3] p-6 shadow-[0_4px_20px_-4px_rgba(38,32,23,0.05)] space-y-5">
                     <div class="flex items-center gap-3 pb-3 border-b border-[#f0ece1]">
                         <div class="w-9 h-9 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 flex items-center justify-center font-bold">
@@ -321,38 +321,99 @@
                             </svg>
                         </div>
                         <div>
-                            <h2 class="font-serif-classic text-base font-bold text-[#262017]">Radius Presensi Kehadiran Karyawan</h2>
-                            <p class="text-xs text-[#786e60]">Atur toleransi batas maksimal jarak GPS untuk absensi mandiri staf kasir dan warehouse.</p>
+                            <h2 class="font-serif-classic text-base font-bold text-[#262017]">Lokasi & Radius Presensi Kehadiran Karyawan</h2>
+                            <p class="text-xs text-[#786e60]">Atur titik koordinat kantor/toko (Latitude & Longitude) dan batas maksimal radius jarak GPS untuk absensi mandiri staf kasir dan warehouse.</p>
                         </div>
                     </div>
 
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 items-center">
+                    <div class="space-y-4">
+                        <!-- Nama Label Kantor -->
                         <div>
                             <label class="block text-xs font-bold text-[#262017] mb-1.5">
-                                Maksimal Jarak Radius Absensi (Meter) <span class="text-rose-600">*</span>
+                                Nama / Label Titik Kantor Toko
                             </label>
-                            <div class="relative">
-                                <input type="number" name="attendance_max_distance" required min="1" max="5000" step="1"
-                                    value="{{ old('attendance_max_distance', $settings['attendance_max_distance'] ?? '15') }}"
-                                    placeholder="Contoh: 15"
-                                    class="w-full text-xs pl-3.5 pr-14 py-2.5 rounded-xl border border-[#d6cfc2] bg-[#faf8f5] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#c59b27] font-mono font-bold text-[#262017]">
-                                <span class="absolute inset-y-0 right-0 pr-3.5 flex items-center text-xs font-bold text-[#786e60] pointer-events-none">
-                                    Meter
-                                </span>
-                            </div>
-                            <p class="text-[11px] text-[#786e60] mt-1">
-                                Batas toleransi jarak GPS karyawan dari titik kantor toko {{ $settings['store_name'] ?? 'Toko' }} ({{ $settings['store_address'] ?? 'Alamat Toko' }}) agar absensi dapat dikonfirmasi.
-                            </p>
+                            <input type="text" name="attendance_office_name"
+                                value="{{ old('attendance_office_name', $settings['attendance_office_name'] ?? 'Kantor Fira Cake (Ruko Ruby Masale)') }}"
+                                placeholder="Contoh: Kantor Fira Cake (Ruko Ruby Masale)"
+                                class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-[#d6cfc2] bg-[#faf8f5] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#c59b27] font-medium text-[#262017]">
                         </div>
 
-                        <div class="p-3.5 rounded-xl bg-amber-50/70 border border-amber-200 text-xs text-amber-900 space-y-1">
-                            <span class="font-bold flex items-center gap-1.5 text-[#8a681c]">
-                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                                Dampak Pengaturan Radius
-                            </span>
-                            <p class="text-[11px] text-amber-800 leading-relaxed">
-                                Jika karyawan berada melebihi jarak ini dari toko, tombol ambil foto kamera dan tombol kirim absensi otomatis terkunci dan ditolak oleh sistem.
-                            </p>
+                        <!-- Koordinat Latitude & Longitude -->
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-bold text-[#262017] mb-1.5">
+                                    Latitude Kantor <span class="text-rose-600">*</span>
+                                </label>
+                                <input type="text" id="attendance_office_latitude" name="attendance_office_latitude" required
+                                    value="{{ old('attendance_office_latitude', $settings['attendance_office_latitude'] ?? '-5.155325') }}"
+                                    placeholder="-5.155325"
+                                    oninput="updateOfficeMapLink()"
+                                    class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-[#d6cfc2] bg-[#faf8f5] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#c59b27] font-mono font-bold text-[#262017]">
+                                <span class="text-[10.5px] text-[#786e60] mt-1 block">Contoh: -5.155325 (Garis Lintang)</span>
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-bold text-[#262017] mb-1.5">
+                                    Longitude Kantor <span class="text-rose-600">*</span>
+                                </label>
+                                <input type="text" id="attendance_office_longitude" name="attendance_office_longitude" required
+                                    value="{{ old('attendance_office_longitude', $settings['attendance_office_longitude'] ?? '119.441929') }}"
+                                    placeholder="119.441929"
+                                    oninput="updateOfficeMapLink()"
+                                    class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-[#d6cfc2] bg-[#faf8f5] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#c59b27] font-mono font-bold text-[#262017]">
+                                <span class="text-[10.5px] text-[#786e60] mt-1 block">Contoh: 119.441929 (Garis Bujur)</span>
+                            </div>
+                        </div>
+
+                        <!-- Tombol Pintas GPS & Cek Maps -->
+                        <div class="flex flex-wrap items-center justify-between gap-2 p-3 rounded-xl bg-slate-50 border border-slate-200">
+                            <button type="button" onclick="getCurrentLocationForOffice()"
+                                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#262017] hover:bg-[#15120c] active:scale-95 text-white text-xs font-bold transition cursor-pointer">
+                                <svg class="w-3.5 h-3.5 text-[#c59b27]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                                </svg>
+                                <span id="btnLocationText">Gunakan Lokasi Perangkat Saat Ini</span>
+                            </button>
+
+                            <a id="btnViewOfficeMap" href="https://www.google.com/maps?q={{ $settings['attendance_office_latitude'] ?? '-5.155325' }},{{ $settings['attendance_office_longitude'] ?? '119.441929' }}" target="_blank"
+                                class="inline-flex items-center gap-1 text-xs font-bold text-blue-600 hover:text-blue-800 transition">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                </svg>
+                                <span>Lihat Pin di Google Maps</span>
+                            </a>
+                        </div>
+
+                        <!-- Radius Maksimal -->
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 items-center pt-2 border-t border-[#f0ece1]">
+                            <div>
+                                <label class="block text-xs font-bold text-[#262017] mb-1.5">
+                                    Maksimal Jarak Radius Absensi (Meter) <span class="text-rose-600">*</span>
+                                </label>
+                                <div class="relative">
+                                    <input type="number" name="attendance_max_distance" required min="1" max="5000" step="1"
+                                        value="{{ old('attendance_max_distance', $settings['attendance_max_distance'] ?? '15') }}"
+                                        placeholder="Contoh: 15"
+                                        class="w-full text-xs pl-3.5 pr-14 py-2.5 rounded-xl border border-[#d6cfc2] bg-[#faf8f5] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#c59b27] font-mono font-bold text-[#262017]">
+                                    <span class="absolute inset-y-0 right-0 pr-3.5 flex items-center text-xs font-bold text-[#786e60] pointer-events-none">
+                                        Meter
+                                    </span>
+                                </div>
+                                <p class="text-[11px] text-[#786e60] mt-1">
+                                    Batas toleransi radius lingkaran GPS dari titik kantor di atas agar absensi staf dapat diterima.
+                                </p>
+                            </div>
+
+                            <div class="p-3.5 rounded-xl bg-amber-50/70 border border-amber-200 text-xs text-amber-900 space-y-1">
+                                <span class="font-bold flex items-center gap-1.5 text-[#8a681c]">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                    Dampak Pengaturan Lokasi & Radius
+                                </span>
+                                <p class="text-[11px] text-amber-800 leading-relaxed">
+                                    Peta Leaflet di menu absensi karyawan akan otomatis memusatkan pin pada koordinat kantor yang Anda tentukan di atas. Jika karyawan berada di luar radius meter ini, absensi otomatis tertolak.
+                                </p>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -430,4 +491,52 @@
     </form>
 </div>
 @endsection
+
+@push('scripts')
+<script>
+    function updateOfficeMapLink() {
+        const lat = document.getElementById('attendance_office_latitude')?.value.trim();
+        const lng = document.getElementById('attendance_office_longitude')?.value.trim();
+        const link = document.getElementById('btnViewOfficeMap');
+        if (link && lat && lng) {
+            link.href = 'https://www.google.com/maps?q=' + encodeURIComponent(lat + ',' + lng);
+        }
+    }
+
+    function getCurrentLocationForOffice() {
+        const btnText = document.getElementById('btnLocationText');
+        if (!navigator.geolocation) {
+            alert('Peramban Anda tidak mendukung deteksi lokasi GPS.');
+            return;
+        }
+
+        const originalText = btnText ? btnText.innerText : 'Gunakan Lokasi Perangkat Saat Ini';
+        if (btnText) btnText.innerText = 'Mendeteksi GPS...';
+
+        navigator.geolocation.getCurrentPosition(
+            (pos) => {
+                const lat = pos.coords.latitude.toFixed(6);
+                const lng = pos.coords.longitude.toFixed(6);
+                const latInput = document.getElementById('attendance_office_latitude');
+                const lngInput = document.getElementById('attendance_office_longitude');
+
+                if (latInput) latInput.value = lat;
+                if (lngInput) lngInput.value = lng;
+                updateOfficeMapLink();
+
+                if (btnText) {
+                    btnText.innerText = 'Lokasi Terdeteksi (' + lat + ', ' + lng + ')';
+                    setTimeout(() => { btnText.innerText = originalText; }, 3000);
+                }
+            },
+            (err) => {
+                console.warn('Geolocation error:', err);
+                alert('Gagal mendeteksi lokasi GPS: ' + (err.message || 'Izin akses lokasi ditolak oleh browser/perangkat Anda.'));
+                if (btnText) btnText.innerText = originalText;
+            },
+            { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+        );
+    }
+</script>
+@endpush
 

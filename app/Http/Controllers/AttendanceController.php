@@ -74,8 +74,9 @@ class AttendanceController extends Controller
         $maxDistance = Setting::getAttendanceMaxDistance();
 
         $office = [
-            'latitude' => self::OFFICE_LATITUDE,
-            'longitude' => self::OFFICE_LONGITUDE,
+            'name' => Setting::getAttendanceOfficeName(),
+            'latitude' => Setting::getAttendanceOfficeLatitude(),
+            'longitude' => Setting::getAttendanceOfficeLongitude(),
             'max_distance' => $maxDistance,
         ];
 
@@ -118,11 +119,14 @@ class AttendanceController extends Controller
         // 2. Hitung jarak dari kantor dengan rumus Haversine
         $userLat = (float) $request->input('latitude');
         $userLng = (float) $request->input('longitude');
+        $officeLat = Setting::getAttendanceOfficeLatitude();
+        $officeLng = Setting::getAttendanceOfficeLongitude();
+
         $distance = $this->calculateHaversineDistance(
             $userLat,
             $userLng,
-            self::OFFICE_LATITUDE,
-            self::OFFICE_LONGITUDE
+            $officeLat,
+            $officeLng
         );
 
         // 3. Validasi radius maksimal dari pengaturan toko
