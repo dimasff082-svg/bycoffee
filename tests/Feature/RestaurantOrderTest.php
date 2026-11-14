@@ -1419,4 +1419,16 @@ class RestaurantOrderTest extends TestCase
             'message' => 'Uang tunai yang diterima belum diisi. Masukkan nominal uang yang diterima atau klik Uang Pas.',
         ]);
     }
+
+    public function test_uploaded_payment_proof_can_be_retrieved_via_storage_url(): void
+    {
+        Storage::fake('public');
+        $file = UploadedFile::fake()->image('test_proof.jpg');
+        $path = $file->store('payment_proofs', 'public');
+
+        $response = $this->get('/storage/'.$path);
+
+        $response->assertStatus(200);
+        $this->assertStringContainsString('image/', $response->headers->get('Content-Type') ?? '');
+    }
 }

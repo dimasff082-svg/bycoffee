@@ -477,18 +477,32 @@
                                     <span class="px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-emerald-600 text-white">QRIS Resmi</span>
                                 </div>
 
-                                <div class="flex flex-col items-center justify-center bg-white p-3 rounded-xl border border-amber-200 shadow-2xs">
-                                    @if(!empty($settings['payment_qris_image']))
-                                        <img src="{{ asset('storage/'.$settings['payment_qris_image']) }}" alt="QRIS Barcode" class="w-48 h-48 object-contain rounded-lg">
-                                    @else
-                                        <!-- Placeholder QRIS Barcode jika admin belum unggah gambar kustom -->
-                                        <div class="w-44 h-44 bg-slate-50 border-2 border-dashed border-slate-300 rounded-xl flex flex-col items-center justify-center p-3 text-center">
-                                            <svg class="w-12 h-12 text-slate-400 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"/></svg>
-                                            <span class="text-xs font-bold text-slate-700">{{ $settings['payment_qris_name'] ?? 'Fira Cake QRIS' }}</span>
-                                            <span class="text-[10px] text-slate-400 mt-0.5">Scan via GoPay, BCA, Dana, OVO, ShopeePay</span>
-                                        </div>
-                                    @endif
-                                    <span class="text-[11px] font-bold text-slate-600 mt-2">Scan QRIS sesuai total tagihan pesanan</span>
+                                <div class="flex justify-center">
+                                    <div class="w-fit max-w-[280px] bg-white p-3 rounded-2xl border border-amber-200 shadow-xs flex flex-col items-center text-center">
+                                        @if(!empty($settings['payment_qris_image']))
+                                            <div class="rounded-xl overflow-hidden border border-slate-200/90 shadow-2xs bg-slate-50 flex items-center justify-center p-0.5">
+                                                <img src="{{ asset('storage/'.$settings['payment_qris_image']) }}" alt="QRIS Barcode" class="w-full max-w-[250px] h-auto max-h-[360px] object-contain block rounded-lg">
+                                            </div>
+                                        @else
+                                            <!-- Placeholder QRIS Barcode jika admin belum unggah gambar kustom -->
+                                            <div class="w-48 h-56 bg-slate-50 border-2 border-dashed border-slate-300 rounded-xl flex flex-col items-center justify-center p-3 text-center">
+                                                <svg class="w-12 h-12 text-slate-400 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"/></svg>
+                                                <span class="text-xs font-bold text-slate-700">{{ $settings['payment_qris_name'] ?? 'Fira Cake QRIS' }}</span>
+                                                <span class="text-[10px] text-slate-400 mt-0.5">Scan via GoPay, BCA, Dana, OVO, ShopeePay</span>
+                                            </div>
+                                        @endif
+                                        <span class="text-[11px] font-bold text-slate-600 mt-2.5">Scan QRIS sesuai total tagihan pesanan</span>
+
+                                        <!-- Tombol Download QRIS -->
+                                        <button type="button" onclick="downloadQrisImage()"
+                                            class="mt-2.5 w-full inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 active:scale-95 text-stone-950 text-xs font-extrabold border border-amber-400 shadow-xs transition cursor-pointer"
+                                            title="Download kode QRIS ke perangkat untuk bayar via e-wallet / m-banking">
+                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                                            </svg>
+                                            <span id="btnDownloadQrisText">Download QRIS</span>
+                                        </button>
+                                    </div>
                                 </div>
 
                                 <p class="text-[11px] text-amber-900 leading-relaxed">
@@ -977,6 +991,115 @@
                         s.classList.add('hidden');
                     }
                 });
+            }
+        }
+
+        async function downloadQrisImage() {
+            const btn = document.getElementById('btnDownloadQrisText');
+            const originalText = btn ? btn.innerText : 'Download QRIS';
+            if (btn) btn.innerText = 'Mengunduh...';
+
+            const customQrisUrl = @json(!empty($settings['payment_qris_image']) ? asset('storage/'.$settings['payment_qris_image']) : null);
+            const qrisName = @json($settings['payment_qris_name'] ?? 'Fira Cake QRIS');
+            const cleanSlug = qrisName.toLowerCase().replace(/[^a-z0-9]/g, '_');
+            const filename = 'QRIS_' + cleanSlug + '.png';
+
+            try {
+                if (customQrisUrl) {
+                    const response = await fetch(customQrisUrl);
+                    const blob = await response.blob();
+                    const blobUrl = window.URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    link.href = blobUrl;
+                    link.download = filename;
+                    document.body.appendChild(link);
+                    link.click();
+                    link.remove();
+                    setTimeout(() => window.URL.revokeObjectURL(blobUrl), 1000);
+                } else {
+                    // Jika admin belum mengunggah gambar kustom QRIS, buatkan kartu gambar QRIS standar via Canvas
+                    const canvas = document.createElement('canvas');
+                    canvas.width = 600;
+                    canvas.height = 700;
+                    const ctx = canvas.getContext('2d');
+
+                    // Background Putih
+                    ctx.fillStyle = '#ffffff';
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                    // Header Kartu
+                    ctx.fillStyle = '#b45309';
+                    ctx.fillRect(0, 0, canvas.width, 100);
+
+                    ctx.fillStyle = '#ffffff';
+                    ctx.font = 'bold 28px sans-serif';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('QRIS PEMBAYARAN RESMI', canvas.width / 2, 60);
+
+                    // Nama Toko / Merchant
+                    ctx.fillStyle = '#0f172a';
+                    ctx.font = 'bold 30px sans-serif';
+                    ctx.fillText(qrisName, canvas.width / 2, 170);
+
+                    ctx.fillStyle = '#64748b';
+                    ctx.font = '18px sans-serif';
+                    ctx.fillText('Scan via GoPay, BCA, Dana, OVO, ShopeePay', canvas.width / 2, 205);
+
+                    // Border Frame QR
+                    ctx.strokeStyle = '#cbd5e1';
+                    ctx.lineWidth = 4;
+                    ctx.strokeRect(100, 240, 400, 350);
+
+                    // 3 Finder Patterns
+                    const drawFinder = (x, y) => {
+                        ctx.fillStyle = '#0f172a';
+                        ctx.fillRect(x, y, 70, 70);
+                        ctx.fillStyle = '#ffffff';
+                        ctx.fillRect(x + 10, y + 10, 50, 50);
+                        ctx.fillStyle = '#0f172a';
+                        ctx.fillRect(x + 20, y + 20, 30, 30);
+                    };
+                    drawFinder(130, 270);
+                    drawFinder(390, 270);
+                    drawFinder(130, 490);
+
+                    // Pola Titik QR
+                    ctx.fillStyle = '#0f172a';
+                    for (let r = 0; r < 7; r++) {
+                        for (let c = 0; c < 7; c++) {
+                            if ((r + c) % 2 === 0 && (r * c) % 3 !== 0) {
+                                ctx.fillRect(240 + c * 18, 320 + r * 18, 14, 14);
+                            }
+                        }
+                    }
+
+                    // Teks instruksi bawah
+                    ctx.fillStyle = '#475569';
+                    ctx.font = 'bold 20px sans-serif';
+                    ctx.fillText('Scan QRIS sesuai total tagihan pesanan Anda', canvas.width / 2, 640);
+
+                    canvas.toBlob((blob) => {
+                        const blobUrl = window.URL.createObjectURL(blob);
+                        const link = document.createElement('a');
+                        link.href = blobUrl;
+                        link.download = filename;
+                        document.body.appendChild(link);
+                        link.click();
+                        link.remove();
+                        setTimeout(() => window.URL.revokeObjectURL(blobUrl), 1000);
+                    });
+                }
+            } catch (err) {
+                console.error("Gagal mendownload QRIS:", err);
+                if (customQrisUrl) {
+                    window.open(customQrisUrl, '_blank');
+                } else {
+                    alert("Gagal mendownload gambar QRIS.");
+                }
+            } finally {
+                setTimeout(() => {
+                    if (btn) btn.innerText = originalText;
+                }, 1000);
             }
         }
 

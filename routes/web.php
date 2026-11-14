@@ -30,6 +30,7 @@ use App\Http\Controllers\TakeawayOrderController;
 use App\Http\Controllers\Warehouse\ExpenseController as WarehouseExpenseController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Storage;
 
 // Redirect root to login or appropriate dashboard
 Route::get('/', function () {
@@ -242,3 +243,20 @@ Route::middleware(['auth', 'role:cashier,warehouse,admin,owner'])->prefix('my-sa
     Route::get('/', [EmployeeSalaryController::class, 'index'])->name('index');
     Route::get('/{salary}/print', [EmployeeSalaryController::class, 'print'])->name('print');
 });
+
+// Fallback Route untuk Melayani File Public Storage (Bukti Pembayaran, Foto Produk, dll)
+// Berfungsi andal di Windows & Server Hosting baik ada maupun tanpa symbolic link
+Route::get('/storage/{path}', function (string $path) {
+    $cleanPath = str_replace(['..', '\\'], ['', '/'], $path);
+    $disk = Storage::disk('public');
+
+    abort_unless($disk->exists($cleanPath), 404);
+
+    $fullPath = $disk->path($cleanPath);
+    $mime = mime_content_type($fullPath) ?: 'application/octet-stream';
+
+    return response()->file($fullPath, [
+        'Content-Type' => $mime,
+        'Cache-Control' => 'public, max-age=86400',
+    ]);
+})->where('path', '.*')->name('storage.file');
