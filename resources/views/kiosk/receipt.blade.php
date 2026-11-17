@@ -221,6 +221,10 @@
                         <span>Metode Bayar</span>
                         <span class="font-bold uppercase text-slate-900">{{ $sale->payment?->methodLabel() ?? 'TUNAI' }}</span>
                     </div>
+                    <div class="flex items-start justify-between gap-2 pt-1.5 border-t border-slate-100 text-slate-800">
+                        <span class="font-bold text-slate-900 shrink-0">NOTE:</span>
+                        <span class="text-right font-semibold break-words max-w-[200px]">{{ $sale->notes ?: '-' }}</span>
+                    </div>
                 </div>
             </div>
 
@@ -268,6 +272,7 @@
             total: @json((float)$sale->total_amount),
             amountTendered: @json((float)($sale->payment?->amount_tendered ?? $sale->total_amount)),
             changeAmount: @json((float)($sale->payment?->change_amount ?? 0)),
+            note: @json($sale->notes ?: '-'),
             items: [
                 @foreach($sale->items as $item)
                 {
@@ -375,6 +380,14 @@
             if (data.amountTendered > 0) {
                 bytes.push(...textToBytes(padLine("Uang Diterima", "Rp " + formatRupiah(data.amountTendered), LINE_WIDTH) + "\n"));
                 bytes.push(...textToBytes(padLine("Uang Kembalian", "Rp " + formatRupiah(data.changeAmount), LINE_WIDTH) + "\n"));
+            }
+
+            // Baris NOTE Struk
+            const noteStr = String(data.note || "-");
+            if (noteStr.length <= (LINE_WIDTH - 6)) {
+                bytes.push(...textToBytes(padLine("NOTE:", noteStr, LINE_WIDTH) + "\n"));
+            } else {
+                bytes.push(...textToBytes("NOTE:\n" + noteStr + "\n"));
             }
 
             // Footer Struk

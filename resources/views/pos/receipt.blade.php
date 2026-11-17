@@ -126,6 +126,7 @@
             $receiptSubtotal = $isOpenBill ? $receiptSales->sum('subtotal') : $sale->subtotal;
             $receiptPayment = $sale->payment ?? $sale->openBill?->sales->pluck('payment')->filter()->first();
             $receiptCashier = $sale->openBill?->closer?->name ?? ($sale->openBill?->opener?->name ?? ($sale->confirmer?->name ?? ($sale->user?->name ?? 'Kasir Resto')));
+            $receiptNotes = $isOpenBill ? ($sale->openBill->notes ?: $receiptSales->pluck('notes')->filter()->implode(', ')) : $sale->notes;
         @endphp
 
         @if($isOpenBill)
@@ -240,6 +241,10 @@
                     <span>Uang Kembalian</span>
                     <span>Rp {{ number_format($receiptPayment->change_amount ?? 0, 0, ',', '.') }}</span>
                 </div>
+                <div class="flex items-start justify-between gap-2 pt-1.5 border-t border-slate-100 text-slate-800">
+                    <span class="font-bold text-slate-900 shrink-0">NOTE:</span>
+                    <span class="text-right font-semibold break-words max-w-[200px]">{{ $receiptNotes ?: '-' }}</span>
+                </div>
             </div>
         </div>
 
@@ -345,6 +350,7 @@
         total: @json((float)$receiptTotal),
         amountTendered: @json((float)($receiptPayment->amount_tendered ?? $receiptTotal)),
         changeAmount: @json((float)($receiptPayment->change_amount ?? 0)),
+        note: @json($receiptNotes ?: '-'),
         items: [
             @foreach($receiptItems as $item)
             {
@@ -452,6 +458,14 @@
         if (data.amountTendered > 0) {
             bytes.push(...textToBytes(padLine("Uang Diterima", "Rp " + formatRupiah(data.amountTendered), LINE_WIDTH) + "\n"));
             bytes.push(...textToBytes(padLine("Uang Kembalian", "Rp " + formatRupiah(data.changeAmount), LINE_WIDTH) + "\n"));
+        }
+
+        // Baris NOTE Struk
+        const noteStr = String(data.note || "-");
+        if (noteStr.length <= (LINE_WIDTH - 6)) {
+            bytes.push(...textToBytes(padLine("NOTE:", noteStr, LINE_WIDTH) + "\n"));
+        } else {
+            bytes.push(...textToBytes("NOTE:\n" + noteStr + "\n"));
         }
 
         // Footer Struk

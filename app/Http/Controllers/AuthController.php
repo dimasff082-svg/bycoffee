@@ -22,10 +22,23 @@ class AuthController extends Controller
                 return redirect()->route('kitchen.index');
             }
             if (Auth::user()->isWarehouse()) {
-                return redirect()->route('warehouse.expenses.index');
+                return redirect()->route('warehouse.raw_materials.index');
+            }
+            if (Auth::user()->isPelayanan()) {
+                return redirect()->route('pelayanan.menu.index');
+            }
+            if (Auth::user()->isCashier()) {
+                return redirect()->route('cashier.dashboard');
             }
 
-            return redirect()->route('cashier.dashboard');
+            $user = Auth::user();
+            Auth::logout();
+            request()->session()->invalidate();
+            request()->session()->regenerateToken();
+
+            return redirect()->route('login')->withErrors([
+                'email' => "Akun Anda memiliki role '{$user->role}' yang belum terdaftar untuk hak akses dashboard. Silakan hubungi Administrator.",
+            ]);
         }
 
         return view('auth.login');
@@ -72,10 +85,24 @@ class AuthController extends Controller
         }
 
         if ($user->isWarehouse()) {
-            return redirect()->route('warehouse.expenses.index');
+            return redirect()->route('warehouse.raw_materials.index');
         }
 
-        return redirect()->route('cashier.dashboard');
+        if ($user->isPelayanan()) {
+            return redirect()->route('pelayanan.menu.index');
+        }
+
+        if ($user->isCashier()) {
+            return redirect()->route('cashier.dashboard');
+        }
+
+        Auth::logout();
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+
+        return redirect()->route('login')->withErrors([
+            'email' => "Akun Anda memiliki role '{$user->role}' yang belum memiliki akses dashboard.",
+        ]);
     }
 
     public function logout(Request $request): RedirectResponse

@@ -110,6 +110,11 @@ class User extends Authenticatable
         return $this->role === 'warehouse';
     }
 
+    public function isPelayanan(): bool
+    {
+        return $this->role === 'pelayanan';
+    }
+
     public function attendances(): HasMany
     {
         return $this->hasMany(Attendance::class);
@@ -133,6 +138,7 @@ class User extends Authenticatable
             'cashier' => 'KASIR',
             'kitchen' => 'DAPUR',
             'warehouse' => 'STAF WAREHOUSE',
+            'pelayanan' => 'PELAYANAN',
             default => strtoupper((string) $this->role),
         };
     }

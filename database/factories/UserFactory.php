@@ -36,6 +36,16 @@ class UserFactory extends Factory
     }
 
     /**
+     * Indicate that the user is a cashier.
+     */
+    public function cashier(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'role' => 'cashier',
+        ]);
+    }
+
+    /**
      * Indicate that the user is an admin.
      */
     public function admin(): static
@@ -72,6 +82,16 @@ class UserFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'role' => 'kitchen',
+        ]);
+    }
+
+    /**
+     * Indicate that the user is a service staff / waiter.
+     */
+    public function pelayanan(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'role' => 'pelayanan',
         ]);
     }
 

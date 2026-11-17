@@ -67,7 +67,7 @@ class AttendanceController extends Controller
         ];
 
         // Daftar karyawan untuk filter dropdown
-        $employees = User::whereIn('role', ['cashier', 'warehouse', 'kitchen'])
+        $employees = User::whereIn('role', ['cashier', 'warehouse', 'kitchen', 'pelayanan'])
             ->where('is_active', true)
             ->orderBy('name')
             ->get();

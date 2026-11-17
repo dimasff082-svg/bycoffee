@@ -51,8 +51,8 @@ class SalaryController extends Controller
             'total_pending' => (float) ($stats->total_pending ?? 0),
         ];
 
-        // Daftar seluruh karyawan aktif yang berhak menerima slip gaji (Kasir dan Staf Warehouse)
-        $employees = User::whereIn('role', ['cashier', 'warehouse'])
+        // Daftar seluruh karyawan aktif yang berhak menerima slip gaji (Kasir, Staf Warehouse, Pelayanan)
+        $employees = User::whereIn('role', ['cashier', 'warehouse', 'pelayanan'])
             ->where('is_active', true)
             ->orderBy('name')
             ->get();
@@ -77,7 +77,7 @@ class SalaryController extends Controller
             'user_id' => [
                 'required',
                 Rule::exists('users', 'id')->where(function ($query) {
-                    $query->whereIn('role', ['cashier', 'warehouse'])->where('is_active', true);
+                    $query->whereIn('role', ['cashier', 'warehouse', 'pelayanan'])->where('is_active', true);
                 }),
             ],
             'period_month' => ['required', 'string', 'max:50'],
