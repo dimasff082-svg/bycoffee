@@ -5,13 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pesan Menu - Meja {{ $table->table_number }} | Cafe & Resto</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    <link rel="icon" type="image/png" href="{{ $storeLogo }}?v={{ md5($storeLogo) }}">
+    <link rel="shortcut icon" href="{{ $storeLogo }}?v={{ md5($storeLogo) }}">
+    <link rel="apple-touch-icon" href="{{ $storeLogo }}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,600;0,800;1,600&display=swap" rel="stylesheet">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    @if(!empty($midtransSnapUrl))
-        <script src="{{ $midtransSnapUrl }}" data-client-key="{{ $midtransClientKey }}"></script>
-    @endif
+    <script src="{{ $midtransSnapUrl }}" data-client-key="{{ $midtransClientKey }}"></script>
     <style>
         body { font-family: 'Plus Jakarta Sans', sans-serif; }
         .font-serif-resto { font-family: 'Playfair Display', serif; }
@@ -23,7 +24,7 @@
     <header class="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200/80 px-4 py-3 shadow-2xs">
         <div class="max-w-2xl mx-auto flex items-center justify-between">
             <div class="flex items-center gap-3">
-                <img src="{{ $storeLogo }}" alt="{{ $storeName }}" class="w-10 h-10 object-contain drop-shadow-sm shrink-0" onerror="this.src='{{ asset('images/default-cake.png') }}'">
+                <img src="{{ $storeLogo }}" alt="{{ $storeName }}" class="w-10 h-10 object-contain drop-shadow-sm shrink-0" onerror="this.onerror=null; this.src='{{ asset('images/logo.png') }}'">
                 <div>
                     <h1 class="text-sm font-extrabold text-slate-900 leading-tight">
                         <span>{{ $storeNameLine1 }}</span>
@@ -285,18 +286,26 @@
 
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         @foreach($category->products as $product)
-                            <div class="menu-item bg-white rounded-2xl border border-slate-200/80 p-3.5 shadow-2xs hover:shadow-md transition flex gap-3.5"
+                            <div class="menu-item bg-white rounded-2xl border border-slate-200/80 p-3.5 shadow-2xs hover:shadow-md transition flex gap-3.5 {{ !$product->is_available ? 'opacity-90' : '' }}"
                                 data-name="{{ strtolower($product->name) }}" data-category="cat-{{ $category->id }}">
                                 
                                 <!-- Foto Menu -->
-                                <div class="w-20 h-20 sm:w-24 sm:h-24 rounded-xl overflow-hidden shrink-0 bg-amber-50/70 border border-slate-200/80 flex items-center justify-center">
+                                <div class="relative w-20 h-20 sm:w-24 sm:h-24 rounded-xl overflow-hidden shrink-0 bg-amber-50/70 border border-slate-200/80 flex items-center justify-center">
                                     @if($product->image_url)
-                                        <img src="{{ $product->image_url }}" alt="{{ $product->name }}" class="w-full h-full object-cover">
+                                        <img src="{{ $product->image_url }}" alt="{{ $product->name }}" class="w-full h-full object-cover {{ !$product->is_available ? 'grayscale opacity-60' : '' }}">
                                     @else
-                                        <div class="text-amber-700/60 flex flex-col items-center justify-center p-2 text-center">
+                                        <div class="text-amber-700/60 flex flex-col items-center justify-center p-2 text-center {{ !$product->is_available ? 'opacity-40' : '' }}">
                                             <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
                                             </svg>
+                                        </div>
+                                    @endif
+
+                                    @if(!$product->is_available)
+                                        <div class="absolute inset-0 bg-stone-900/60 backdrop-blur-[1px] flex items-center justify-center">
+                                            <span class="px-2 py-0.5 rounded-md bg-rose-600 text-white font-extrabold text-[10px] tracking-wider uppercase shadow-md border border-white/20">
+                                                Habis
+                                            </span>
                                         </div>
                                     @endif
                                 </div>
@@ -312,6 +321,11 @@
                                             <span class="inline-block text-[9px] text-amber-800 bg-amber-50 px-1.5 py-0.5 rounded font-medium border border-amber-200/60">
                                                 {{ $category->name }}
                                             </span>
+                                            @if(!$product->is_available)
+                                                <span class="inline-block text-[9px] text-rose-700 bg-rose-50 px-1.5 py-0.5 rounded font-bold border border-rose-200">
+                                                    Stok Habis
+                                                </span>
+                                            @endif
                                         </div>
                                         @if($product->description)
                                             <p class="text-[11px] text-slate-500 mt-1 line-clamp-2 leading-relaxed">{{ $product->description }}</p>
@@ -323,30 +337,40 @@
                                             Rp {{ number_format($product->selling_price, 0, ',', '.') }}
                                         </span>
 
-                                        <!-- Controller Tambah / Kurangi Menu -->
-                                        <div id="btn-group-{{ $product->id }}">
-                                            <button type="button" id="btn-add-{{ $product->id }}"
-                                                onclick="addToCart({{ $product->id }}, '{{ addslashes($product->name) }}', {{ $product->selling_price }})"
-                                                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold shadow-xs transition transform hover:scale-105 active:scale-95">
-                                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4" />
+                                        @if(!$product->is_available)
+                                            <!-- Label Habis (Tidak Dapat Dipesan) -->
+                                            <span class="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-rose-50 text-rose-700 border border-rose-200 text-xs font-bold cursor-not-allowed select-none">
+                                                <svg class="w-3.5 h-3.5 text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
                                                 </svg>
-                                                Tambah
-                                            </button>
-                                            <div id="counter-{{ $product->id }}" class="hidden items-center gap-1.5 bg-amber-50 border border-amber-300 rounded-xl p-1 shadow-2xs">
-                                                <button type="button" onclick="decreaseQty({{ $product->id }})"
-                                                    class="w-6 h-6 rounded-lg bg-white text-amber-900 border border-amber-300 flex items-center justify-center font-bold text-xs hover:bg-amber-100">
-                                                    -
+                                                Habis
+                                            </span>
+                                        @else
+                                            <!-- Controller Tambah / Kurangi Menu -->
+                                            <div id="btn-group-{{ $product->id }}">
+                                                <button type="button" id="btn-add-{{ $product->id }}"
+                                                    onclick="addToCart({{ $product->id }}, '{{ addslashes($product->name) }}', {{ $product->selling_price }})"
+                                                    class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold shadow-xs transition transform hover:scale-105 active:scale-95">
+                                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4" />
+                                                    </svg>
+                                                    Tambah
                                                 </button>
-                                                <span id="qty-{{ $product->id }}" class="font-black text-xs text-amber-950 px-1.5 min-w-[1.25rem] text-center">
-                                                    0
-                                                </span>
-                                                <button type="button" onclick="increaseQty({{ $product->id }})"
-                                                    class="w-6 h-6 rounded-lg bg-amber-600 text-white flex items-center justify-center font-bold text-xs hover:bg-amber-700">
-                                                    +
-                                                </button>
+                                                <div id="counter-{{ $product->id }}" class="hidden items-center gap-1.5 bg-amber-50 border border-amber-300 rounded-xl p-1 shadow-2xs">
+                                                    <button type="button" onclick="decreaseQty({{ $product->id }})"
+                                                        class="w-6 h-6 rounded-lg bg-white text-amber-900 border border-amber-300 flex items-center justify-center font-bold text-xs hover:bg-amber-100">
+                                                        -
+                                                    </button>
+                                                    <span id="qty-{{ $product->id }}" class="font-black text-xs text-amber-950 px-1.5 min-w-[1.25rem] text-center">
+                                                        0
+                                                    </span>
+                                                    <button type="button" onclick="increaseQty({{ $product->id }})"
+                                                        class="w-6 h-6 rounded-lg bg-amber-600 text-white flex items-center justify-center font-bold text-xs hover:bg-amber-700">
+                                                        +
+                                                    </button>
+                                                </div>
                                             </div>
-                                        </div>
+                                        @endif
                                     </div>
                                 </div>
                             </div>
@@ -404,7 +428,7 @@
             </div>
 
             <!-- Form Pesanan Pelanggan -->
-            <form id="checkoutForm" action="{{ route('order.checkout', $table->table_number) }}" method="POST" enctype="multipart/form-data" class="flex flex-col flex-1 overflow-hidden">
+            <form id="checkoutForm" action="{{ route('order.checkout', $table->table_number) }}" method="POST" class="flex flex-col flex-1 overflow-hidden">
                 @csrf
                 <div class="p-5 overflow-y-auto space-y-4 flex-1">
                     <!-- Selected Items List -->
@@ -415,9 +439,22 @@
                     <!-- Customer Info Input -->
                     <div class="pt-3 border-t border-slate-100 space-y-3">
                         @if(! $activeOpenBill)
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-700 mb-1">Nama Pemesan (Opsional)</label>
+                                    <input type="text" name="customer_name" placeholder="Misal: Dimas / Kakak Meja 1..."
+                                        class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-xs text-slate-800 focus:ring-2 focus:ring-amber-500">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-700 mb-1">No. WhatsApp (Untuk Struk WA)</label>
+                                    <input type="tel" name="customer_phone" placeholder="Contoh: 081234567890..."
+                                        class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-xs text-slate-800 focus:ring-2 focus:ring-amber-500">
+                                </div>
+                            </div>
+                        @else
                             <div>
-                                <label class="block text-xs font-bold text-slate-700 mb-1">Nama Pemesan (Opsional)</label>
-                                <input type="text" name="customer_name" placeholder="Misal: Dimas / Kakak Meja {{ $table->table_number }}..."
+                                <label class="block text-xs font-bold text-slate-700 mb-1">No. WhatsApp Pelanggan (Untuk Struk WA)</label>
+                                <input type="tel" name="customer_phone" placeholder="Contoh: 081234567890..."
                                     class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-xs text-slate-800 focus:ring-2 focus:ring-amber-500">
                             </div>
                         @endif
@@ -438,154 +475,42 @@
                                 <span>Otomatis Masuk ke Open Bill Meja</span>
                             </div>
                             <p class="text-[11px] text-emerald-800 leading-relaxed">
-                                Anda <strong>tidak perlu membayar sekarang</strong>. Pesanan tambahan ini langsung dikirim ke Kasir dan diakumulasikan ke tagihan meja Anda (Nomor Bill: {{ $activeOpenBill->bill_number }}).
+                                Anda <strong>tidak perlu membayar sekarang</strong>. Pesanan tambahan ini langsung dikirim ke Dapur dan diakumulasikan ke tagihan meja Anda (Nomor Bill: {{ $activeOpenBill->bill_number }}).
                             </p>
                         </div>
                     @else
-                        <!-- Pilihan Metode Pembayaran: QRIS & Transfer Bank -->
-                        <div class="pt-3 border-t border-slate-100 space-y-3">
-                            <label class="block text-xs font-bold text-slate-800 mb-1">Pilih Metode Pembayaran *</label>
-                            <div class="grid grid-cols-2 gap-2.5">
-                                <!-- 1. QRIS -->
-                                <label class="flex flex-col items-center justify-center p-3 rounded-2xl border-2 border-amber-500 bg-amber-50/50 cursor-pointer transition payment-card text-center shadow-2xs" id="card-qris">
-                                    <input type="radio" name="payment_choice" value="qris" class="sr-only" checked onchange="handlePaymentChange(this.value)">
-                                    <div class="w-8 h-8 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center mb-1.5">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"/></svg>
-                                    </div>
-                                    <span class="text-xs font-extrabold text-slate-900 block">QRIS</span>
-                                    <span class="text-[10px] text-amber-800 font-medium">Scan Semua E-Wallet</span>
-                                </label>
-
-                                <!-- 2. Transfer Bank -->
-                                <label class="flex flex-col items-center justify-center p-3 rounded-2xl border-2 border-slate-200 bg-white cursor-pointer hover:border-slate-300 transition payment-card text-center" id="card-transfer">
-                                    <input type="radio" name="payment_choice" value="transfer" class="sr-only" onchange="handlePaymentChange(this.value)">
-                                    <div class="w-8 h-8 rounded-xl bg-blue-50 text-blue-700 flex items-center justify-center mb-1.5">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
-                                    </div>
-                                    <span class="text-xs font-extrabold text-slate-900 block">Transfer Bank</span>
-                                    <span class="text-[10px] text-slate-500 font-medium">{{ $settings['payment_bank_name'] ?? 'BCA' }}</span>
-                                </label>
-                            </div>
-
-                            <!-- Panel Info QRIS -->
-                            <div id="panel-qris" class="p-4 rounded-2xl bg-amber-50/60 border border-amber-200/80 space-y-3">
-                                <div class="flex items-center justify-between">
-                                    <div>
-                                        <span class="text-[10px] font-bold uppercase tracking-wider text-amber-800 block">Pembayaran QRIS Toko</span>
-                                        <h4 class="text-xs font-black text-slate-900">{{ $settings['payment_qris_name'] ?? 'Fira Cake QRIS' }}</h4>
-                                    </div>
-                                    <span class="px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-emerald-600 text-white">QRIS Resmi</span>
-                                </div>
-
-                                <div class="flex justify-center">
-                                    <div class="w-fit max-w-[280px] bg-white p-3 rounded-2xl border border-amber-200 shadow-xs flex flex-col items-center text-center">
-                                        @if(!empty($settings['payment_qris_image']))
-                                            <div class="rounded-xl overflow-hidden border border-slate-200/90 shadow-2xs bg-slate-50 flex items-center justify-center p-0.5">
-                                                <img src="{{ asset('storage/'.$settings['payment_qris_image']) }}" alt="QRIS Barcode" class="w-full max-w-[250px] h-auto max-h-[360px] object-contain block rounded-lg">
-                                            </div>
-                                        @else
-                                            <!-- Placeholder QRIS Barcode jika admin belum unggah gambar kustom -->
-                                            <div class="w-48 h-56 bg-slate-50 border-2 border-dashed border-slate-300 rounded-xl flex flex-col items-center justify-center p-3 text-center">
-                                                <svg class="w-12 h-12 text-slate-400 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"/></svg>
-                                                <span class="text-xs font-bold text-slate-700">{{ $settings['payment_qris_name'] ?? 'Fira Cake QRIS' }}</span>
-                                                <span class="text-[10px] text-slate-400 mt-0.5">Scan via GoPay, BCA, Dana, OVO, ShopeePay</span>
-                                            </div>
-                                        @endif
-                                        <span class="text-[11px] font-bold text-slate-600 mt-2.5">Scan QRIS sesuai total tagihan pesanan</span>
-
-                                        <!-- Tombol Download QRIS -->
-                                        <button type="button" onclick="downloadQrisImage()"
-                                            class="mt-2.5 w-full inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 active:scale-95 text-stone-950 text-xs font-extrabold border border-amber-400 shadow-xs transition cursor-pointer"
-                                            title="Download kode QRIS ke perangkat untuk bayar via e-wallet / m-banking">
-                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                                            </svg>
-                                            <span id="btnDownloadQrisText">Download QRIS</span>
-                                        </button>
-                                    </div>
-                                </div>
-
-                                <p class="text-[11px] text-amber-900 leading-relaxed">
-                                    {{ $settings['payment_qris_notes'] ?? 'Buka aplikasi e-wallet / mobile banking Anda, scan kode QRIS di atas. Setelah pembayaran berhasil, simpan tangkapan layar (screenshot) bukti pembayaran Anda.' }}
-                                </p>
-                            </div>
-
-                            <!-- Panel Info Transfer Bank -->
-                            <div id="panel-transfer" class="hidden p-4 rounded-2xl bg-blue-50/60 border border-blue-200/80 space-y-3">
-                                <div class="flex items-center justify-between">
-                                    <div>
-                                        <span class="text-[10px] font-bold uppercase tracking-wider text-blue-800 block">Transfer Rekening Toko</span>
-                                        <h4 class="text-xs font-black text-slate-900">{{ $settings['payment_bank_name'] ?? 'Bank BCA' }}</h4>
-                                    </div>
-                                    <span class="px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-blue-700 text-white">Bank Resmi</span>
-                                </div>
-
-                                <div class="bg-white p-3.5 rounded-xl border border-blue-200 shadow-2xs space-y-2">
-                                    <div class="flex items-center justify-between">
-                                        <span class="text-[11px] text-slate-500 font-medium">Nomor Rekening:</span>
-                                        <button type="button" onclick="copyBankNumber('{{ $settings['payment_bank_account_number'] ?? '1234567890' }}')" class="text-xs font-bold text-blue-600 hover:text-blue-800 flex items-center gap-1">
-                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"/></svg>
-                                            <span id="copyBankBtnText">Salin Rekening</span>
-                                        </button>
-                                    </div>
-                                    <div class="font-mono text-base font-extrabold text-slate-900 tracking-wider">
-                                        {{ $settings['payment_bank_account_number'] ?? '1234567890' }}
-                                    </div>
-                                    <div class="pt-1 border-t border-slate-100 flex items-center justify-between text-xs">
-                                        <span class="text-slate-500">Atas Nama:</span>
-                                        <span class="font-bold text-slate-800">{{ $settings['payment_bank_account_holder'] ?? 'Fira Cake Bakery' }}</span>
-                                    </div>
-                                </div>
-
-                                <p class="text-[11px] text-blue-900 leading-relaxed">
-                                    {{ $settings['payment_bank_notes'] ?? 'Transfer sesuai nominal tagihan pesanan ke nomor rekening di atas. Simpan struk / bukti transfer untuk diunggah.' }}
-                                </p>
-                            </div>
-
-                            <!-- TEMPAT UPLOAD BUKTI PEMBAYARAN (WAJIB DIISI) -->
-                            <div class="pt-2 space-y-2">
-                                <div class="flex items-center justify-between">
-                                    <label class="block text-xs font-bold text-slate-900">
-                                        Upload Bukti Pembayaran <span class="text-rose-600">* Wajib Diisi</span>
-                                    </label>
-                                    <span class="text-[10px] text-slate-500">Maks. 5 MB (JPG, PNG, WEBP)</span>
-                                </div>
-
-                                <input type="file" name="payment_proof" id="paymentProofInput" accept="image/*" required class="hidden" onchange="handleProofSelected(this)">
-
-                                <!-- Upload Dropzone Container -->
-                                <div id="proofDropzone" onclick="document.getElementById('paymentProofInput').click()"
-                                    class="border-2 border-dashed border-amber-300 hover:border-amber-500 bg-amber-50/40 hover:bg-amber-50/70 rounded-2xl p-4 text-center cursor-pointer transition transform active:scale-[0.99] space-y-1.5">
-                                    <div class="w-10 h-10 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center mx-auto shadow-2xs">
-                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
-                                        </svg>
-                                    </div>
-                                    <span class="text-xs font-bold text-amber-950 block">Ketuk untuk Ambil Foto / Unggah Bukti</span>
-                                    <p class="text-[11px] text-amber-800">Foto struk ATM, bukti transfer m-banking, atau screenshot QRIS</p>
-                                </div>
-
-                                <!-- Preview Container Bukti yang Dipilih -->
-                                <div id="proofPreviewCard" class="hidden p-3 rounded-2xl bg-white border border-slate-200 shadow-2xs flex items-center justify-between gap-3">
-                                    <div class="flex items-center gap-3 overflow-hidden">
-                                        <img id="proofPreviewImg" src="" alt="Bukti Pembayaran" class="w-12 h-12 rounded-xl object-cover border border-slate-200 shrink-0">
-                                        <div class="truncate">
-                                            <span id="proofFileName" class="text-xs font-bold text-slate-800 block truncate">bukti-transfer.jpg</span>
-                                            <span id="proofFileSize" class="text-[10px] text-slate-400 block">120 KB</span>
+                        <!-- Pilihan Metode Pembayaran Khusus Non-Open Bill -->
+                        <div class="pt-3 border-t border-slate-100 space-y-2">
+                            <label class="block text-xs font-bold text-slate-700 mb-1">Pilih Metode Pembayaran *</label>
+                            <div class="space-y-2.5">
+                                <!-- 1. Midtrans Snap Online Gateway -->
+                                <label class="flex items-start gap-3 p-3.5 rounded-2xl border-2 border-amber-500 bg-amber-50/40 cursor-pointer transition payment-card" id="card-midtrans">
+                                    <input type="radio" name="payment_choice" value="midtrans" class="mt-0.5 text-amber-600 focus:ring-amber-500" checked onchange="handlePaymentChange(this.value)">
+                                    <div class="flex-1">
+                                        <div class="flex items-center justify-between">
+                                            <span class="text-xs font-extrabold text-slate-900">Bayar Online Sekarang (QRIS / E-Wallet)</span>
+                                            <span class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-600 text-white shadow-2xs">Payment Gateway</span>
                                         </div>
+                                        <p class="text-[11px] text-slate-500 mt-0.5">Scan QRIS (GoPay, OVO, ShopeePay) atau Virtual Account otomatis via Midtrans.</p>
                                     </div>
-                                    <button type="button" onclick="document.getElementById('paymentProofInput').click()" class="shrink-0 px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-[11px] font-bold transition">
-                                        Ganti Foto
-                                    </button>
-                                </div>
-                            </div>
+                                </label>
 
-                            <!-- Notice Alur Kasir & Dapur -->
-                            <div class="p-3 bg-amber-50 rounded-2xl border border-amber-200/80 text-[11px] text-amber-900 leading-relaxed flex items-start gap-2">
-                                <svg class="w-4 h-4 text-amber-700 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                                <span>Pesanan Anda akan masuk ke <strong>Kasir terlebih dahulu</strong> untuk verifikasi bukti pembayaran. Setelah dikonfirmasi oleh kasir, pesanan akan langsung diteruskan ke dapur untuk dimasak.</span>
+                                <!-- 2. Bayar Tunai ke Kasir -->
+                                <label class="flex items-start gap-3 p-3.5 rounded-2xl border-2 border-slate-200 bg-white cursor-pointer hover:border-slate-300 transition payment-card" id="card-cash">
+                                    <input type="radio" name="payment_choice" value="cash" class="mt-0.5 text-amber-600 focus:ring-amber-500" onchange="handlePaymentChange(this.value)">
+                                    <div class="flex-1">
+                                        <div class="flex items-center justify-between">
+                                            <span class="text-xs font-bold text-slate-900">Bayar Tunai di Kasir</span>
+                                            <span class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-100 text-slate-700">Tunai</span>
+                                        </div>
+                                        <p class="text-[11px] text-slate-500 mt-0.5">Kirim pesanan ke dapur sekarang, lalu Anda dapat langsung menuju ke kasir untuk membayar tunai.</p>
+                                    </div>
+                                </label>
                             </div>
+                        </div>
+
+                        <div id="paymentNotice" class="bg-amber-50 p-3.5 rounded-2xl text-[11px] text-amber-900 leading-relaxed border border-amber-200/60">
+                            Setelah menekan <strong>Kirim & Bayar Online</strong>, jendela pembayaran Midtrans akan terbuka untuk pembayaran instan via QRIS / E-Wallet.
                         </div>
                     @endif
                 </div>
@@ -599,7 +524,7 @@
                     <button type="submit" id="btnSubmitOrder"
                         class="px-6 py-3 rounded-2xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-black shadow-lg shadow-amber-600/20 transition transform hover:scale-105 active:scale-95 flex items-center gap-2">
                         <span id="btnSubmitText">
-                            {{ $activeOpenBill ? 'Kirim ke Kasir (Open Bill) &rarr;' : 'Kirim Pesanan & Bukti &rarr;' }}
+                            {{ $activeOpenBill ? 'Kirim ke Dapur (Tanpa Bayar Sekarang) &rarr;' : 'Kirim & Bayar Online &rarr;' }}
                         </span>
                     </button>
                 </div>
@@ -994,214 +919,119 @@
             }
         }
 
-        async function downloadQrisImage() {
-            const btn = document.getElementById('btnDownloadQrisText');
-            const originalText = btn ? btn.innerText : 'Download QRIS';
-            if (btn) btn.innerText = 'Mengunduh...';
-
-            const customQrisUrl = @json(!empty($settings['payment_qris_image']) ? asset('storage/'.$settings['payment_qris_image']) : null);
-            const qrisName = @json($settings['payment_qris_name'] ?? 'Fira Cake QRIS');
-            const cleanSlug = qrisName.toLowerCase().replace(/[^a-z0-9]/g, '_');
-            const filename = 'QRIS_' + cleanSlug + '.png';
-
-            try {
-                if (customQrisUrl) {
-                    const response = await fetch(customQrisUrl);
-                    const blob = await response.blob();
-                    const blobUrl = window.URL.createObjectURL(blob);
-                    const link = document.createElement('a');
-                    link.href = blobUrl;
-                    link.download = filename;
-                    document.body.appendChild(link);
-                    link.click();
-                    link.remove();
-                    setTimeout(() => window.URL.revokeObjectURL(blobUrl), 1000);
-                } else {
-                    // Jika admin belum mengunggah gambar kustom QRIS, buatkan kartu gambar QRIS standar via Canvas
-                    const canvas = document.createElement('canvas');
-                    canvas.width = 600;
-                    canvas.height = 700;
-                    const ctx = canvas.getContext('2d');
-
-                    // Background Putih
-                    ctx.fillStyle = '#ffffff';
-                    ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-                    // Header Kartu
-                    ctx.fillStyle = '#b45309';
-                    ctx.fillRect(0, 0, canvas.width, 100);
-
-                    ctx.fillStyle = '#ffffff';
-                    ctx.font = 'bold 28px sans-serif';
-                    ctx.textAlign = 'center';
-                    ctx.fillText('QRIS PEMBAYARAN RESMI', canvas.width / 2, 60);
-
-                    // Nama Toko / Merchant
-                    ctx.fillStyle = '#0f172a';
-                    ctx.font = 'bold 30px sans-serif';
-                    ctx.fillText(qrisName, canvas.width / 2, 170);
-
-                    ctx.fillStyle = '#64748b';
-                    ctx.font = '18px sans-serif';
-                    ctx.fillText('Scan via GoPay, BCA, Dana, OVO, ShopeePay', canvas.width / 2, 205);
-
-                    // Border Frame QR
-                    ctx.strokeStyle = '#cbd5e1';
-                    ctx.lineWidth = 4;
-                    ctx.strokeRect(100, 240, 400, 350);
-
-                    // 3 Finder Patterns
-                    const drawFinder = (x, y) => {
-                        ctx.fillStyle = '#0f172a';
-                        ctx.fillRect(x, y, 70, 70);
-                        ctx.fillStyle = '#ffffff';
-                        ctx.fillRect(x + 10, y + 10, 50, 50);
-                        ctx.fillStyle = '#0f172a';
-                        ctx.fillRect(x + 20, y + 20, 30, 30);
-                    };
-                    drawFinder(130, 270);
-                    drawFinder(390, 270);
-                    drawFinder(130, 490);
-
-                    // Pola Titik QR
-                    ctx.fillStyle = '#0f172a';
-                    for (let r = 0; r < 7; r++) {
-                        for (let c = 0; c < 7; c++) {
-                            if ((r + c) % 2 === 0 && (r * c) % 3 !== 0) {
-                                ctx.fillRect(240 + c * 18, 320 + r * 18, 14, 14);
-                            }
-                        }
-                    }
-
-                    // Teks instruksi bawah
-                    ctx.fillStyle = '#475569';
-                    ctx.font = 'bold 20px sans-serif';
-                    ctx.fillText('Scan QRIS sesuai total tagihan pesanan Anda', canvas.width / 2, 640);
-
-                    canvas.toBlob((blob) => {
-                        const blobUrl = window.URL.createObjectURL(blob);
-                        const link = document.createElement('a');
-                        link.href = blobUrl;
-                        link.download = filename;
-                        document.body.appendChild(link);
-                        link.click();
-                        link.remove();
-                        setTimeout(() => window.URL.revokeObjectURL(blobUrl), 1000);
-                    });
-                }
-            } catch (err) {
-                console.error("Gagal mendownload QRIS:", err);
-                if (customQrisUrl) {
-                    window.open(customQrisUrl, '_blank');
-                } else {
-                    alert("Gagal mendownload gambar QRIS.");
-                }
-            } finally {
-                setTimeout(() => {
-                    if (btn) btn.innerText = originalText;
-                }, 1000);
-            }
-        }
-
-        function copyBankNumber(num) {
-            if (navigator.clipboard) {
-                navigator.clipboard.writeText(num).then(() => {
-                    const el = document.getElementById('copyBankBtnText');
-                    if (el) {
-                        const orig = el.innerText;
-                        el.innerText = 'Tersalin!';
-                        setTimeout(() => el.innerText = orig, 2000);
-                    }
-                });
-            }
-        }
-
-        function handleProofSelected(input) {
-            if (input.files && input.files[0]) {
-                const file = input.files[0];
-
-                if (file.size > 5 * 1024 * 1024) {
-                    alert('Ukuran file bukti pembayaran terlalu besar (Maksimal 5 MB). Silakan pilih gambar yang lebih kecil.');
-                    input.value = '';
-                    return;
-                }
-
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    const img = document.getElementById('proofPreviewImg');
-                    if (img) img.src = e.target.result;
-
-                    const nameEl = document.getElementById('proofFileName');
-                    if (nameEl) nameEl.innerText = file.name;
-
-                    const sizeEl = document.getElementById('proofFileSize');
-                    if (sizeEl) sizeEl.innerText = (file.size / 1024).toFixed(1) + ' KB';
-
-                    const dropzone = document.getElementById('proofDropzone');
-                    const previewCard = document.getElementById('proofPreviewCard');
-                    if (dropzone) dropzone.classList.add('hidden');
-                    if (previewCard) previewCard.classList.remove('hidden');
-                };
-                reader.readAsDataURL(file);
-            }
-        }
-
         function handlePaymentChange(val) {
             document.querySelectorAll('.payment-card').forEach(c => {
-                c.classList.remove('border-amber-500', 'bg-amber-50/50', 'shadow-2xs');
+                c.classList.remove('border-amber-500', 'bg-amber-50/40', 'border-slate-300');
                 c.classList.add('border-slate-200', 'bg-white');
             });
 
-            const panelQris = document.getElementById('panel-qris');
-            const panelTransfer = document.getElementById('panel-transfer');
+            const card = document.getElementById(`card-${val}`);
+            const notice = document.getElementById('paymentNotice');
             const submitText = document.getElementById('btnSubmitText');
 
-            if (val === 'qris') {
-                const card = document.getElementById('card-qris');
+            if (val === 'midtrans') {
                 if (card) {
                     card.classList.remove('border-slate-200', 'bg-white');
-                    card.classList.add('border-amber-500', 'bg-amber-50/50', 'shadow-2xs');
+                    card.classList.add('border-amber-500', 'bg-amber-50/40');
                 }
-                if (panelQris) panelQris.classList.remove('hidden');
-                if (panelTransfer) panelTransfer.classList.add('hidden');
-                if (submitText) submitText.innerHTML = 'Kirim Pesanan & Bukti QRIS &rarr;';
-            } else if (val === 'transfer') {
-                const card = document.getElementById('card-transfer');
+                submitText.innerHTML = 'Kirim & Bayar Online &rarr;';
+                notice.innerHTML = 'Setelah menekan <strong>Kirim & Bayar Online</strong>, jendela pembayaran Midtrans akan terbuka untuk pembayaran instan via QRIS / E-Wallet.';
+            } else if (val === 'cash') {
                 if (card) {
                     card.classList.remove('border-slate-200', 'bg-white');
-                    card.classList.add('border-blue-500', 'bg-blue-50/50', 'shadow-2xs');
+                    card.classList.add('border-amber-500', 'bg-amber-50/40');
                 }
-                if (panelQris) panelQris.classList.add('hidden');
-                if (panelTransfer) panelTransfer.classList.remove('hidden');
-                if (submitText) submitText.innerHTML = 'Kirim Pesanan & Bukti Transfer &rarr;';
+                submitText.innerHTML = 'Kirim Pesanan (Bayar di Kasir) &rarr;';
+                notice.innerHTML = 'Pesanan akan langsung dikirim ke Dapur. Anda dapat langsung menuju kasir untuk membayar tunai.';
+            } else if (val === 'open_bill') {
+                if (card) {
+                    card.classList.remove('border-slate-200', 'bg-white');
+                    card.classList.add('border-emerald-500', 'bg-emerald-50/60');
+                }
+                submitText.innerHTML = 'Kirim Pesanan (Gabung Open Bill) &rarr;';
+                notice.innerHTML = 'Pesanan akan langsung diproses Dapur dan dimasukkan ke Open Bill meja. Anda tidak perlu bayar sekarang, melainkan saat selesai makan di kasir.';
             }
         }
 
-        document.getElementById('checkoutForm')?.addEventListener('submit', function(e) {
-            if (!isActiveOpenBill) {
-                const fileInput = document.getElementById('paymentProofInput');
-                if (!fileInput || !fileInput.files || fileInput.files.length === 0) {
-                    e.preventDefault();
-                    alert('Mohon unggah foto bukti pembayaran terlebih dahulu sebelum mengirim pesanan!');
-                    const dropzone = document.getElementById('proofDropzone');
-                    if (dropzone) {
-                        dropzone.classList.add('border-rose-500', 'bg-rose-50');
-                        dropzone.scrollIntoView({ behavior: 'smooth' });
-                    }
-                    return false;
-                }
+        document.getElementById('checkoutForm')?.addEventListener('submit', async function(e) {
+            const selectedMethod = document.querySelector('input[name="payment_choice"]:checked')?.value || (isActiveOpenBill ? 'open_bill' : 'cash');
+            if (selectedMethod !== 'midtrans') {
+                // Biarkan form submit biasa untuk tunai atau open bill
+                return true;
             }
 
+            e.preventDefault();
+
             const btn = document.getElementById('btnSubmitOrder');
-            if (btn) {
-                btn.disabled = true;
-                btn.innerHTML = `
-                    <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white inline" fill="none" viewBox="0 0 24 24">
-                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    Mengirim Pesanan ke Kasir...
-                `;
+            const originalText = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = `
+                <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white inline" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Menyiapkan Pembayaran...
+            `;
+
+            try {
+                const formData = new FormData(this);
+                const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+
+                const response = await fetch(this.action, {
+                    method: 'POST',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken,
+                    },
+                    body: formData,
+                });
+
+                const data = await response.json();
+
+                if (!response.ok || !data.success) {
+                    throw new Error(data.message || 'Gagal membuat pesanan.');
+                }
+
+                if (data.snap_token && window.snap) {
+                    window.snap.pay(data.snap_token, {
+                        onSuccess: async function(result) {
+                            try {
+                                await fetch(data.redirect_url + '/midtrans-success', {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/json',
+                                        'X-CSRF-TOKEN': csrfToken,
+                                        'Accept': 'application/json',
+                                    },
+                                    body: JSON.stringify({
+                                        transaction_id: result.transaction_id || result.order_id,
+                                        result: result
+                                    })
+                                });
+                            } catch (err) {
+                                console.error('Callback error:', err);
+                            }
+                            window.location.href = data.redirect_url;
+                        },
+                        onPending: function(result) {
+                            window.location.href = data.redirect_url;
+                        },
+                        onError: function(result) {
+                            alert('Pembayaran belum selesai: ' + (result.status_message || 'Silakan bayar di kasir.'));
+                            window.location.href = data.redirect_url;
+                        },
+                        onClose: function() {
+                            window.location.href = data.redirect_url;
+                        }
+                    });
+                } else {
+                    window.location.href = data.redirect_url;
+                }
+            } catch (err) {
+                alert('Terjadi kendala: ' + err.message);
+                btn.disabled = false;
+                btn.innerHTML = originalText;
             }
         });
     </script>

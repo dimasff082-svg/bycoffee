@@ -25,38 +25,34 @@ use App\Http\Controllers\Owner\DashboardController;
 use App\Http\Controllers\Owner\OrderCancellationController as OwnerOrderCancellationController;
 use App\Http\Controllers\Owner\ProfitLossController as OwnerProfitLossController;
 use App\Http\Controllers\Owner\ReportController;
-use App\Http\Controllers\Pelayanan\MenuController as PelayananMenuController;
 use App\Http\Controllers\PosController;
 use App\Http\Controllers\TakeawayOrderController;
 use App\Http\Controllers\Warehouse\ExpenseController as WarehouseExpenseController;
 use App\Http\Controllers\Warehouse\RawMaterialController as WarehouseRawMaterialController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-use Illuminate\Support\Facades\Storage;
 
 // Redirect root to login or appropriate dashboard
 Route::get('/', function () {
     if (auth()->check()) {
-        if (auth()->user()->isAdmin()) {
+        $user = auth()->user();
+        if ($user->isAdmin()) {
             return redirect()->route('admin.dashboard');
         }
-        if (auth()->user()->isOwner()) {
+        if ($user->isOwner()) {
             return redirect()->route('owner.dashboard');
         }
-        if (auth()->user()->isKitchen()) {
+        if ($user->isKitchen()) {
             return redirect()->route('kitchen.index');
         }
-        if (auth()->user()->isWarehouse()) {
+        if ($user->isWarehouse()) {
             return redirect()->route('warehouse.raw_materials.index');
         }
-        if (auth()->user()->isPelayanan()) {
-            return redirect()->route('pelayanan.menu.index');
-        }
-        if (auth()->user()->isCashier()) {
+        if ($user->isCashier()) {
             return redirect()->route('cashier.dashboard');
         }
 
-        $user = auth()->user();
+        // Jika role akun tidak dikenali/tidak memiliki izin dashboard
         auth()->logout();
         request()->session()->invalidate();
         request()->session()->regenerateToken();
@@ -86,7 +82,6 @@ Route::prefix('order')->name('order.')->group(function () {
     Route::post('/{table_number}/open-bill/snap-token', [CustomerOrderController::class, 'getOpenBillSnapToken'])->name('open_bill_snap_token');
     Route::post('/{table_number}/open-bill/midtrans-success', [CustomerOrderController::class, 'markOpenBillMidtransSuccess'])->name('open_bill_midtrans_success');
     Route::get('/{table_number}/status/{sale}', [CustomerOrderController::class, 'status'])->name('status');
-    Route::get('/{table_number}/status/{sale}/check', [CustomerOrderController::class, 'checkStatus'])->name('check_status');
     Route::post('/{table_number}/status/{sale}/midtrans-success', [CustomerOrderController::class, 'markMidtransSuccess'])->name('midtrans_success');
     Route::post('/{table_number}/status/{sale}/snap-token', [CustomerOrderController::class, 'getSnapToken'])->name('snap_token');
 });
@@ -127,8 +122,9 @@ Route::middleware(['auth', 'role:cashier,admin,owner'])->prefix('cashier')->name
     Route::get('/transactions', [CashierTransactionController::class, 'index'])->name('transactions.index');
     Route::get('/transactions/{sale}', [CashierTransactionController::class, 'show'])->name('transactions.show');
 
-    // Data Menu / Katalog Menu (Read-Only untuk Kasir Menjelaskan Menu ke Pelanggan)
+    // Data Menu / Katalog Menu & Tandai Stok Habis oleh Kasir
     Route::get('/menu', [CashierMenuController::class, 'index'])->name('menu.index');
+    Route::patch('/menu/{product}/toggle-availability', [CashierMenuController::class, 'toggleAvailability'])->name('menu.toggle_availability');
 });
 
 // Kitchen Display System Routes (Dapur - Kelola Status Pesanan: Menunggu -> Diproses -> Selesai)
@@ -241,12 +237,7 @@ Route::middleware(['auth', 'role:owner'])->prefix('owner')->name('owner.')->grou
 
 // Warehouse Staff Routes (Staf Gudang & Admin/Owner)
 Route::middleware(['auth', 'role:warehouse,admin,owner'])->prefix('warehouse')->name('warehouse.')->group(function () {
-    // Satu Halaman Transaksi Pengeluaran (Bahan Baku & Operasional)
-    Route::get('/expenses', [WarehouseExpenseController::class, 'index'])->name('expenses.index');
-    Route::post('/expenses', [WarehouseExpenseController::class, 'store'])->name('expenses.store');
-    Route::delete('/expenses/{expense}', [WarehouseExpenseController::class, 'destroy'])->name('expenses.destroy');
-
-    // Inventori Bahan Baku Cafe & Manajemen Stok
+    // Inventori Bahan Baku
     Route::get('/raw-materials', [WarehouseRawMaterialController::class, 'index'])->name('raw_materials.index');
     Route::post('/raw-materials', [WarehouseRawMaterialController::class, 'store'])->name('raw_materials.store');
     Route::put('/raw-materials/{rawMaterial}', [WarehouseRawMaterialController::class, 'update'])->name('raw_materials.update');
@@ -256,39 +247,21 @@ Route::middleware(['auth', 'role:warehouse,admin,owner'])->prefix('warehouse')->
     Route::post('/raw-materials/{rawMaterial}/opname', [WarehouseRawMaterialController::class, 'opname'])->name('raw_materials.opname');
     Route::get('/raw-materials/mutations', [WarehouseRawMaterialController::class, 'mutations'])->name('raw_materials.mutations');
     Route::get('/raw-materials/{rawMaterial}/history', [WarehouseRawMaterialController::class, 'history'])->name('raw_materials.history');
+
+    // Satu Halaman Transaksi Pengeluaran (Bahan Baku & Operasional)
+    Route::get('/expenses', [WarehouseExpenseController::class, 'index'])->name('expenses.index');
+    Route::post('/expenses', [WarehouseExpenseController::class, 'store'])->name('expenses.store');
+    Route::delete('/expenses/{expense}', [WarehouseExpenseController::class, 'destroy'])->name('expenses.destroy');
 });
 
-// Presensi Karyawan Mandiri (Kasir, Staf Warehouse, & Pelayanan)
-Route::middleware(['auth', 'role:cashier,warehouse,pelayanan,admin,owner'])->prefix('attendance')->name('attendance.')->group(function () {
+// Presensi Karyawan Mandiri (Kasir & Staf Warehouse)
+Route::middleware(['auth', 'role:cashier,warehouse,admin,owner'])->prefix('attendance')->name('attendance.')->group(function () {
     Route::get('/', [AttendanceController::class, 'index'])->name('index');
     Route::post('/', [AttendanceController::class, 'store'])->name('store');
 });
 
-// Slip Gaji Karyawan Mandiri (Kasir, Staf Warehouse, & Pelayanan)
-Route::middleware(['auth', 'role:cashier,warehouse,pelayanan,admin,owner'])->prefix('my-salaries')->name('my_salaries.')->group(function () {
+// Slip Gaji Karyawan Mandiri (Kasir & Staf Warehouse)
+Route::middleware(['auth', 'role:cashier,warehouse,admin,owner'])->prefix('my-salaries')->name('my_salaries.')->group(function () {
     Route::get('/', [EmployeeSalaryController::class, 'index'])->name('index');
     Route::get('/{salary}/print', [EmployeeSalaryController::class, 'print'])->name('print');
 });
-
-// Pelayanan (Waiter / Service Staff) Routes
-Route::middleware(['auth', 'role:pelayanan,admin,owner'])->prefix('pelayanan')->name('pelayanan.')->group(function () {
-    // Katalog Daftar Menu (Pure Read-Only)
-    Route::get('/menu', [PelayananMenuController::class, 'index'])->name('menu.index');
-});
-
-// Fallback Route untuk Melayani File Public Storage (Bukti Pembayaran, Foto Produk, dll)
-// Berfungsi andal di Windows & Server Hosting baik ada maupun tanpa symbolic link
-Route::get('/storage/{path}', function (string $path) {
-    $cleanPath = str_replace(['..', '\\'], ['', '/'], $path);
-    $disk = Storage::disk('public');
-
-    abort_unless($disk->exists($cleanPath), 404);
-
-    $fullPath = $disk->path($cleanPath);
-    $mime = mime_content_type($fullPath) ?: 'application/octet-stream';
-
-    return response()->file($fullPath, [
-        'Content-Type' => $mime,
-        'Cache-Control' => 'public, max-age=86400',
-    ]);
-})->where('path', '.*')->name('storage.file');

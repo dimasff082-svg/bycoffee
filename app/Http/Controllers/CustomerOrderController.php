@@ -4,12 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Models\Category;
 use App\Models\OpenBill;
-use App\Models\Payment;
 use App\Models\Product;
 use App\Models\RestaurantTable;
 use App\Models\Sale;
 use App\Models\SaleItem;
-use App\Models\Setting;
 use App\Models\User;
 use App\Services\MidtransService;
 use Exception;
@@ -69,8 +67,6 @@ class CustomerOrderController extends Controller
 
         $midtransClientKey = config('services.midtrans.client_key');
         $midtransSnapUrl = config('services.midtrans.snap_url');
-        $settings = Setting::allMapped();
-        $qrisImageUrl = Setting::getQrisImageUrl();
 
         return view('customer.order', compact(
             'table',
@@ -79,9 +75,7 @@ class CustomerOrderController extends Controller
             'requestedOpenBill',
             'recentOrders',
             'midtransClientKey',
-            'midtransSnapUrl',
-            'settings',
-            'qrisImageUrl'
+            'midtransSnapUrl'
         ));
     }
 
@@ -94,6 +88,7 @@ class CustomerOrderController extends Controller
 
         $validated = $request->validate([
             'customer_name' => ['nullable', 'string', 'max:100'],
+            'customer_phone' => ['nullable', 'string', 'max:25'],
             'notes' => ['nullable', 'string', 'max:500'],
         ]);
 
@@ -147,45 +142,29 @@ class CustomerOrderController extends Controller
     }
 
     /**
-     * Pelanggan mengirimkan pesanan dari keranjang belanja QR Code Meja.
-     * Menggunakan metode QRIS atau Transfer Bank dengan wajib mengunggah bukti pembayaran.
-     * Pesanan masuk ke Kasir terlebih dahulu untuk verifikasi bukti pembayaran sebelum masuk ke Dapur.
+     * Pelanggan mengirimkan pesanan dari keranjang belanja QR Code.
+     * Untuk meja yang open bill, pesanan langsung masuk ke nota meja tanpa perlu bayar dulu.
      */
-    public function checkout(Request $request, string $table_number, ?MidtransService $midtransService = null): JsonResponse|RedirectResponse
+    public function checkout(Request $request, string $table_number, MidtransService $midtransService): JsonResponse|RedirectResponse
     {
         $tableNumber = strtoupper(trim($table_number));
 
-        // Cek apakah meja memiliki Open Bill yang aktif
-        $activeOpenBill = OpenBill::where('table_number', $tableNumber)
-            ->where('status', 'open')
-            ->latest()
-            ->first();
-
         $validated = $request->validate([
             'customer_name' => ['nullable', 'string', 'max:100'],
+            'customer_phone' => ['nullable', 'string', 'max:25'],
             'notes' => ['nullable', 'string', 'max:500'],
-            'payment_choice' => [$activeOpenBill ? 'nullable' : 'required', 'string', 'in:qris,transfer,cash,open_bill'],
-            'payment_proof' => [$activeOpenBill ? 'nullable' : 'required', 'image', 'mimes:jpeg,png,jpg,webp', 'max:5120'],
+            'payment_choice' => ['nullable', 'string', 'in:midtrans,cash,open_bill'],
             'items' => ['required', 'array', 'min:1'],
             'items.*.id' => ['required', 'integer', 'exists:products,id'],
             'items.*.quantity' => ['required', 'integer', 'min:1'],
             'items.*.notes' => ['nullable', 'string', 'max:255'],
         ], [
-            'payment_choice.required' => 'Silakan pilih metode pembayaran (QRIS atau Transfer Bank).',
-            'payment_proof.required' => 'Wajib mengunggah foto bukti pembayaran sebelum mengirim pesanan.',
-            'payment_proof.image' => 'File bukti pembayaran harus berupa gambar (JPG, PNG, JPEG, WEBP).',
-            'payment_proof.max' => 'Ukuran file bukti pembayaran maksimal 5 MB.',
             'items.required' => 'Keranjang pesanan masih kosong. Silakan pilih menu makanan atau minuman.',
             'items.min' => 'Pilih minimal satu menu untuk membuat pesanan.',
         ]);
 
-        $proofPath = null;
-        if ($request->hasFile('payment_proof')) {
-            $proofPath = $request->file('payment_proof')->store('payment_proofs', 'public');
-        }
-
         try {
-            $sale = DB::transaction(function () use ($validated, $tableNumber, $activeOpenBill, $proofPath) {
+            $sale = DB::transaction(function () use ($validated, $tableNumber) {
                 $itemIds = array_column($validated['items'], 'id');
 
                 $products = Product::whereIn('id', $itemIds)->lockForUpdate()->get()->keyBy('id');
@@ -208,6 +187,10 @@ class CustomerOrderController extends Controller
                         throw new Exception("Menu '{$product->name}' sedang tidak tersedia saat ini.");
                     }
 
+                    if (! $product->is_available) {
+                        throw new Exception("Menu '{$product->name}' sedang habis dan tidak dapat dipesan.");
+                    }
+
                     $lineTotal = $qty * (float) $product->selling_price;
                     $subtotal += $lineTotal;
 
@@ -220,13 +203,19 @@ class CustomerOrderController extends Controller
                     ];
                 }
 
+                // Cek apakah meja memiliki Open Bill yang aktif
+                $activeOpenBill = OpenBill::where('table_number', $tableNumber)
+                    ->where('status', 'open')
+                    ->latest()
+                    ->first();
+
                 // Untuk meja open bill: otomatis gabung ke open bill tanpa perlu bayar dulu
                 $openBillId = null;
                 if ($activeOpenBill) {
                     $openBillId = $activeOpenBill->id;
                     $paymentChoice = 'open_bill';
                 } else {
-                    $paymentChoice = $validated['payment_choice'] ?? 'qris';
+                    $paymentChoice = $validated['payment_choice'] ?? 'cash';
                 }
 
                 // Format nomor pesanan rapi: ORD001, ORD002, dst
@@ -238,21 +227,19 @@ class CustomerOrderController extends Controller
                 }
 
                 // 1. Simpan Pesanan Utama (Sale)
-                // Status awal: order_status 'pending', payment_status 'unpaid'
-                // Pesanan TIDAK langsung masuk dapur, melainkan menunggu konfirmasi pembayaran dari kasir
                 $sale = Sale::create([
                     'transaction_number' => $orderNumber,
                     'table_number' => $tableNumber,
                     'customer_name' => $validated['customer_name'] ?? ($activeOpenBill?->customer_name ?? null),
+                    'customer_phone' => $validated['customer_phone'] ?? null,
                     'user_id' => User::getActiveCashierId(), // Dicatat pada kasir yang sedang aktif login
                     'transaction_date' => now(),
                     'subtotal' => $subtotal,
                     'discount_amount' => 0,
                     'total_amount' => $subtotal,
                     'status' => 'pending',
-                    'order_status' => 'pending', // Menunggu konfirmasi pembayaran kasir sebelum diteruskan ke dapur
-                    'payment_status' => 'unpaid', // Belum Dibayar / Menunggu Konfirmasi Kasir
-                    'payment_proof' => $proofPath,
+                    'order_status' => 'pending', // Menunggu diproses dapur
+                    'payment_status' => 'unpaid', // Belum Dibayar
                     'open_bill_id' => $openBillId,
                     'notes' => $validated['notes'] ?? null,
                 ]);
@@ -274,21 +261,7 @@ class CustomerOrderController extends Controller
                     ]);
                 }
 
-                // 3. Simpan Catatan Pembayaran Awal (status pending)
-                Payment::create([
-                    'sale_id' => $sale->id,
-                    'method' => $paymentChoice,
-                    'amount_paid' => $subtotal,
-                    'amount_tendered' => $subtotal,
-                    'change_amount' => 0,
-                    'status' => 'pending',
-                    'reference_number' => strtoupper($paymentChoice).'-'.$orderNumber,
-                    'payment_proof' => $proofPath,
-                    'verified_by' => null,
-                    'paid_at' => null,
-                ]);
-
-                // 4. Jika terhubung ke Open Bill, update akumulasi total tagihan meja
+                // 3. Jika terhubung ke Open Bill, update akumulasi total tagihan meja
                 if ($sale->open_bill_id && $activeOpenBill) {
                     $activeOpenBill->recalculateTotal();
                 }
@@ -304,31 +277,38 @@ class CustomerOrderController extends Controller
                 if ($request->expectsJson()) {
                     return response()->json([
                         'success' => true,
-                        'message' => 'Pesanan berhasil dikirim ke Kasir dan ditambahkan ke Nota Tagihan Meja!',
+                        'message' => 'Pesanan berhasil dikirim ke dapur dan ditambahkan ke Nota Tagihan Meja!',
                         'order_number' => $sale->transaction_number,
                         'payment_choice' => 'open_bill',
+                        'snap_token' => null,
                         'redirect_url' => route('order.index', $tableNumber),
                     ]);
                 }
 
                 return redirect()->route('order.index', $tableNumber)
-                    ->with('success', "Pesanan Anda ({$sale->transaction_number}) berhasil dikirim ke Kasir dan ditambahkan ke Nota Meja!");
+                    ->with('success', "Pesanan Anda ({$sale->transaction_number}) berhasil dikirim ke Dapur dan ditambahkan ke Nota Meja!");
             }
 
-            $paymentChoice = $sale->payment?->method ?? ($validated['payment_choice'] ?? 'qris');
+            // 5. Jika non-open-bill dan memilih Midtrans, buat Snap Token
+            $snapToken = null;
+            $paymentChoice = $validated['payment_choice'] ?? 'cash';
+            if ($paymentChoice === 'midtrans') {
+                $snapToken = $midtransService->createSnapToken($sale);
+            }
 
             if ($request->expectsJson()) {
                 return response()->json([
                     'success' => true,
-                    'message' => 'Pesanan dan bukti pembayaran berhasil dikirim ke Kasir. Menunggu konfirmasi kasir.',
+                    'message' => 'Pesanan berhasil dikirim ke dapur dan kasir.',
                     'order_number' => $sale->transaction_number,
                     'payment_choice' => $paymentChoice,
+                    'snap_token' => $snapToken,
                     'redirect_url' => route('order.status', [$tableNumber, $sale->id]),
                 ]);
             }
 
             return redirect()->route('order.status', [$tableNumber, $sale->id])
-                ->with('success', "Pesanan dan bukti pembayaran Anda ({$sale->transaction_number}) berhasil dikirim ke Kasir! Kasir akan segera mengonfirmasi pembayaran Anda.");
+                ->with('success', 'Pesanan Anda berhasil dikirim ke Dapur!');
         } catch (Exception $e) {
             if ($request->expectsJson()) {
                 return response()->json([
@@ -394,9 +374,8 @@ class CustomerOrderController extends Controller
 
     /**
      * Halaman status pesanan untuk pelanggan setelah mengirim pesanan (khusus non-open bill).
-     * Pelanggan dapat memantau status konfirmasi kasir dan status proses dapur secara langsung.
      */
-    public function status(string $table_number, Sale $sale): View
+    public function status(string $table_number, Sale $sale, MidtransService $midtransService): View
     {
         $tableNumber = strtoupper(trim($table_number));
 
@@ -405,33 +384,17 @@ class CustomerOrderController extends Controller
         }
 
         $sale->load(['items.product', 'openBill', 'payment']);
-        $settings = Setting::allMapped();
 
-        return view('customer.status', compact('tableNumber', 'sale', 'settings'));
-    }
-
-    /**
-     * Endpoint polling status pesanan untuk pelanggan meja secara real-time.
-     */
-    public function checkStatus(string $table_number, Sale $sale): JsonResponse
-    {
-        $tableNumber = strtoupper(trim($table_number));
-
-        if ($sale->table_number !== $tableNumber) {
-            return response()->json(['success' => false, 'message' => 'Pesanan tidak cocok dengan meja ini.'], 404);
+        // Jika pesanan belum lunas dan belum memiliki snap token, generate token
+        if ($sale->isUnpaid() && empty($sale->snap_token) && ! $sale->open_bill_id) {
+            $midtransService->createSnapToken($sale);
+            $sale->refresh();
         }
 
-        $sale->load('payment');
+        $midtransClientKey = config('services.midtrans.client_key');
+        $midtransSnapUrl = config('services.midtrans.snap_url');
 
-        return response()->json([
-            'success' => true,
-            'is_paid' => $sale->isPaid(),
-            'payment_status' => $sale->payment_status,
-            'payment_status_label' => $sale->paymentStatusLabel(),
-            'order_status' => $sale->order_status,
-            'order_status_label' => $sale->orderStatusLabel(),
-            'payment_method_label' => $sale->payment?->methodLabel() ?? 'QRIS / Transfer Bank',
-        ]);
+        return view('customer.status', compact('tableNumber', 'sale', 'midtransClientKey', 'midtransSnapUrl'));
     }
 
     /**

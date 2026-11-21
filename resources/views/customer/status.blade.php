@@ -6,9 +6,13 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Status Pesanan - Meja {{ $tableNumber }} ({{ $sale->transaction_number }}) | {{ $storeName }}</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    <link rel="icon" type="image/png" href="{{ $storeLogo }}?v={{ md5($storeLogo) }}">
+    <link rel="shortcut icon" href="{{ $storeLogo }}?v={{ md5($storeLogo) }}">
+    <link rel="apple-touch-icon" href="{{ $storeLogo }}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,600;0,800;1,600&display=swap" rel="stylesheet">
+    <script src="{{ $midtransSnapUrl }}" data-client-key="{{ $midtransClientKey }}"></script>
     <style>
         body { font-family: 'Plus Jakarta Sans', sans-serif; }
         .font-serif-resto { font-family: 'Playfair Display', serif; }
@@ -20,7 +24,7 @@
         <!-- Top Nav Header -->
         <div class="flex items-center justify-between">
             <div class="flex items-center gap-2">
-                <img src="{{ $storeLogo }}" alt="{{ $storeName }}" class="w-8 h-8 rounded-xl object-contain shadow-xs border border-amber-200 p-0.5 bg-white shrink-0" onerror="this.src='{{ asset('images/default-cake.png') }}'">
+                <img src="{{ $storeLogo }}" alt="{{ $storeName }}" class="w-8 h-8 rounded-xl object-contain shadow-xs border border-amber-200 p-0.5 bg-white shrink-0" onerror="this.onerror=null; this.src='{{ asset('images/logo.png') }}'">
                 <div class="leading-tight">
                     <span class="font-extrabold text-xs tracking-wider text-slate-900 block truncate">{{ $storeNameLine1 }}</span>
                     @if(!empty($storeNameLine2))
@@ -33,15 +37,6 @@
             </span>
         </div>
 
-        @if(session('success'))
-            <div class="bg-emerald-50 border border-emerald-200 text-emerald-800 p-4 rounded-2xl text-xs flex items-center gap-3 shadow-2xs">
-                <svg class="w-5 h-5 text-emerald-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                </svg>
-                <span>{{ session('success') }}</span>
-            </div>
-        @endif
-
         <!-- Order Card Status -->
         <div class="bg-white rounded-3xl border border-slate-200/80 p-6 sm:p-8 shadow-xl text-center space-y-5">
             @if($sale->isPaid())
@@ -51,7 +46,7 @@
                     </svg>
                 </div>
             @else
-                <div class="w-16 h-16 rounded-3xl bg-amber-100 text-amber-600 mx-auto flex items-center justify-center shadow-md shadow-amber-500/10 animate-pulse">
+                <div class="w-16 h-16 rounded-3xl bg-amber-100 text-amber-600 mx-auto flex items-center justify-center shadow-md shadow-amber-500/10">
                     <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
@@ -60,7 +55,7 @@
 
             <div>
                 <span class="text-xs font-bold uppercase tracking-wider text-slate-400">
-                    {{ $sale->isPaid() ? 'Pesanan Terkonfirmasi & Masuk Dapur' : 'Pesanan Masuk ke Kasir' }}
+                    {{ $sale->isPaid() ? 'Pesanan Lunas & Sedang Diproses' : 'Pesanan Berhasil Dikirim' }}
                 </span>
                 <h2 class="text-2xl font-black text-slate-900 font-mono mt-0.5">{{ $sale->transaction_number }}</h2>
                 <p class="text-xs text-slate-500 mt-1">
@@ -73,34 +68,27 @@
                 <!-- Status Dapur -->
                 <div class="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/80">
                     <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-1">Status Dapur</span>
-                    @if($sale->isPaid())
-                        @if($sale->order_status === 'completed')
-                            <span class="inline-flex items-center gap-1 font-extrabold text-xs text-emerald-700">
-                                &check; Selesai Dimasak
-                            </span>
-                        @elseif($sale->order_status === 'processing')
-                            <span class="inline-flex items-center gap-1 font-extrabold text-xs text-blue-700 animate-pulse">
-                                &bull; Sedang Dimasak
-                            </span>
-                        @else
-                            <span class="inline-flex items-center gap-1 font-extrabold text-xs text-amber-700">
-                                &bull; Antrean Dapur
-                            </span>
-                        @endif
-                    @else
-                        <span class="inline-flex items-center gap-1 font-extrabold text-xs text-stone-500">
-                            &bull; Menunggu Kasir
+                    @if($sale->order_status === 'completed')
+                        <span class="inline-flex items-center gap-1 font-extrabold text-xs text-emerald-700">
+                            &check; Selesai Dimasak
                         </span>
-                        <span class="text-[9px] text-slate-400 block mt-0.5">Masuk setelah dikonfirmasi</span>
+                    @elseif($sale->order_status === 'processing')
+                        <span class="inline-flex items-center gap-1 font-extrabold text-xs text-blue-700 animate-pulse">
+                            &bull; Sedang Dimasak
+                        </span>
+                    @else
+                        <span class="inline-flex items-center gap-1 font-extrabold text-xs text-amber-700">
+                            &bull; Menunggu Antrean
+                        </span>
                     @endif
                 </div>
 
                 <!-- Status Pembayaran -->
                 <div class="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/80">
-                    <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-1">Status Kasir</span>
+                    <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-1">Status Pembayaran</span>
                     @if($sale->isPaid())
                         <span class="inline-flex items-center gap-1 font-extrabold text-xs text-emerald-700">
-                            &check; Pembayaran Lunas
+                            &check; Lunas
                         </span>
                         <span class="text-[10px] text-emerald-600 block mt-0.5">({{ $sale->payment?->methodLabel() ?? 'Lunas' }})</span>
                     @elseif($sale->open_bill_id)
@@ -109,39 +97,13 @@
                         </span>
                         <span class="text-[10px] text-slate-500 block mt-0.5">Bayar di Kasir Nanti</span>
                     @else
-                        <span class="inline-flex items-center gap-1 font-extrabold text-xs text-amber-700 animate-pulse">
-                            &bull; Menunggu Verifikasi
+                        <span class="inline-flex items-center gap-1 font-extrabold text-xs text-rose-700">
+                            &bull; Belum Dibayar
                         </span>
-                        <span class="text-[10px] text-slate-500 block mt-0.5">{{ $sale->payment?->methodLabel() ?? 'QRIS/Transfer' }}</span>
+                        <span class="text-[10px] text-slate-500 block mt-0.5">Online atau Kasir</span>
                     @endif
                 </div>
             </div>
-
-            <!-- TAMPILAN BUKTI PEMBAYARAN YANG DIUNGGAH PELANGGAN -->
-            @if($sale->hasPaymentProof())
-                <div class="p-4 rounded-2xl bg-[#faf8f4] border border-[#ebdcc4] text-left space-y-2">
-                    <div class="flex items-center justify-between">
-                        <span class="text-[11px] font-bold text-amber-900 uppercase tracking-wider">Bukti Pembayaran Anda</span>
-                        <span class="text-[10px] text-emerald-800 bg-emerald-100/80 font-bold px-2 py-0.5 rounded-md">
-                            Sudah Diunggah &check;
-                        </span>
-                    </div>
-
-                    <div class="flex items-center gap-3 bg-white p-2.5 rounded-xl border border-amber-200/80 shadow-2xs">
-                        <img src="{{ $sale->payment_proof_url }}" alt="Bukti Pembayaran"
-                            onclick="openImageModal('{{ $sale->payment_proof_url }}')"
-                            class="w-14 h-14 object-cover rounded-xl border border-slate-200 shrink-0 cursor-pointer hover:opacity-90 transition">
-                        <div class="flex-1 truncate">
-                            <span class="text-xs font-bold text-slate-800 block truncate">Metode: {{ $sale->payment?->methodLabel() ?? 'QRIS / Transfer' }}</span>
-                            <span class="text-[11px] text-slate-500 block mt-0.5">Bukti sedang diperiksa oleh kasir</span>
-                        </div>
-                        <button type="button" onclick="openImageModal('{{ $sale->payment_proof_url }}')"
-                            class="shrink-0 px-3 py-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 text-xs font-bold transition">
-                            Lihat
-                        </button>
-                    </div>
-                </div>
-            @endif
 
             <!-- Rincian Item Pesanan -->
             <div class="pt-4 border-t border-slate-100 text-left space-y-2">
@@ -161,18 +123,16 @@
                 </div>
             </div>
 
-            <!-- Petunjuk & Pesan Status -->
+            <!-- Petunjuk & Tombol Pembayaran -->
             @if($sale->isPaid())
-                <div class="bg-emerald-50 border border-emerald-200/80 p-4 rounded-2xl text-xs text-emerald-900 text-left leading-relaxed space-y-1">
-                    <div class="flex items-center gap-2 font-black text-emerald-800">
+                <div class="bg-emerald-50 border border-emerald-200/80 p-4 rounded-2xl text-xs text-emerald-900 text-left leading-relaxed">
+                    <div class="flex items-center gap-2 font-black text-emerald-800 mb-1">
                         <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                         </svg>
-                        Pembayaran Berhasil Dikonfirmasi Kasir
+                        Pembayaran Berhasil Diterima
                     </div>
-                    <p class="text-[11px] text-emerald-800">
-                        Terima kasih! Bukti pembayaran telah diverifikasi dan pesanan Anda telah <strong>diteruskan ke Dapur</strong>. Tim dapur kami sedang menyiapkan sajian lezat untuk Anda.
-                    </p>
+                    Terima kasih! Pesanan Anda telah <strong>Lunas</strong> via {{ $sale->payment?->methodLabel() ?? 'Midtrans' }}. Tim dapur kami sedang menyiapkan hidangan lezat untuk Anda.
                 </div>
             @elseif($sale->open_bill_id)
                 <div class="bg-emerald-50/60 border border-emerald-300 p-4 rounded-2xl text-xs text-emerald-950 text-left leading-relaxed">
@@ -180,14 +140,22 @@
                     Pesanan ini secara otomatis dimasukkan ke tagihan <strong>Open Bill Meja {{ $tableNumber }}</strong>. Anda dapat menikmati pesanan terlebih dahulu, dan melunasi seluruh tagihan sekaligus di kasir sebelum pulang.
                 </div>
             @else
-                <div class="bg-amber-50 border border-amber-200 p-4 rounded-2xl text-xs text-amber-950 text-left leading-relaxed space-y-1.5">
-                    <div class="flex items-center gap-2 font-black text-amber-900">
-                        <span class="w-2.5 h-2.5 rounded-full bg-amber-500 animate-ping"></span>
-                        <span>Menunggu Konfirmasi Kasir</span>
+                <!-- Pilihan Pembayaran: Online Midtrans atau Kasir -->
+                <div class="space-y-3">
+                    @if($sale->snap_token)
+                        <button type="button" onclick="payNow()" id="btnPaySnap"
+                            class="w-full py-3.5 px-4 rounded-2xl bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white text-xs font-black shadow-lg shadow-amber-600/20 transition transform hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-2">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                            </svg>
+                            Bayar Sekarang via Midtrans (QRIS / E-Wallet)
+                        </button>
+                    @endif
+
+                    <div class="bg-amber-50 p-4 rounded-2xl text-xs text-amber-900 text-left leading-relaxed border border-amber-200/60">
+                        <span class="font-bold block mb-0.5">Opsi Bayar Tunai di Kasir:</span>
+                        Jika ingin membayar secara tunai, silakan menuju ke meja kasir dan sebutkan <strong>Meja {{ $tableNumber }}</strong> atau No. Pesanan: <strong>{{ $sale->transaction_number }}</strong>.
                     </div>
-                    <p class="text-[11px] text-amber-800 leading-relaxed">
-                        Bukti pembayaran Anda sudah diterima oleh sistem. Kasir kami sedang memeriksa bukti tersebut. <strong>Setelah kasir mengonfirmasi, pesanan Anda akan langsung masuk ke layar Dapur.</strong> Halaman ini akan otomatis diperbarui saat kasir menyetujui pesanan Anda.
-                    </p>
                 </div>
             @endif
 
@@ -209,59 +177,49 @@
         </div>
     </div>
 
-    <!-- Modal Pratinjau Gambar Bukti Pembayaran -->
-    <div id="imagePreviewModal" class="fixed inset-0 z-50 hidden bg-black/80 backdrop-blur-sm flex items-center justify-center p-4" onclick="closeImageModal()">
-        <div class="bg-white rounded-3xl max-w-lg w-full overflow-hidden shadow-2xl p-4 space-y-3" onclick="event.stopPropagation()">
-            <div class="flex items-center justify-between pb-2 border-b border-slate-100">
-                <span class="text-xs font-bold text-slate-800">Bukti Pembayaran ({{ $sale->transaction_number }})</span>
-                <button type="button" onclick="closeImageModal()" class="text-slate-400 hover:text-slate-600 p-1">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-                </button>
-            </div>
-            <div class="max-h-[70vh] overflow-auto flex items-center justify-center bg-slate-100 rounded-2xl p-2">
-                <img id="modalPreviewImg" src="" alt="Bukti Pembayaran Full" class="max-w-full max-h-[65vh] object-contain rounded-xl">
-            </div>
-            <div class="flex justify-end gap-2 pt-1">
-                <a id="modalOpenTabLink" href="" target="_blank" class="px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold transition">
-                    Buka di Tab Baru
-                </a>
-                <button type="button" onclick="closeImageModal()" class="px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold transition">
-                    Tutup
-                </button>
-            </div>
-        </div>
-    </div>
-
+    @if($sale->isUnpaid() && $sale->snap_token)
     <script>
-        function openImageModal(url) {
-            document.getElementById('modalPreviewImg').src = url;
-            document.getElementById('modalOpenTabLink').href = url;
-            document.getElementById('imagePreviewModal').classList.remove('hidden');
-        }
-
-        function closeImageModal() {
-            document.getElementById('imagePreviewModal').classList.add('hidden');
-        }
-
-        // Auto Polling: Cek apakah Kasir sudah mengonfirmasi pesanan meja ini
-        @if($sale->isUnpaid())
-        setInterval(async () => {
-            try {
-                const res = await fetch("{{ route('order.check_status', [$tableNumber, $sale->id]) }}", {
-                    headers: { 'Accept': 'application/json' }
-                });
-                if (res.ok) {
-                    const data = await res.json();
-                    if (data.is_paid) {
-                        window.location.reload();
-                    }
-                }
-            } catch (err) {
-                console.log('Polling check:', err);
+        function payNow() {
+            if (!window.snap) {
+                alert('Midtrans Snap SDK sedang dimuat, silakan coba beberapa detik lagi.');
+                return;
             }
-        }, 4000);
-        @endif
+
+            window.snap.pay('{{ $sale->snap_token }}', {
+                onSuccess: async function(result) {
+                    try {
+                        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+                        await fetch('{{ route("order.midtrans_success", [$tableNumber, $sale->id]) }}', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': csrfToken,
+                                'Accept': 'application/json',
+                            },
+                            body: JSON.stringify({
+                                transaction_id: result.transaction_id || result.order_id,
+                                result: result
+                            })
+                        });
+                    } catch (err) {
+                        console.error('Callback error:', err);
+                    }
+                    window.location.reload();
+                },
+                onPending: function(result) {
+                    window.location.reload();
+                },
+                onError: function(result) {
+                    alert('Pembayaran online belum berhasil: ' + (result.status_message || 'Silakan coba lagi atau bayar ke kasir.'));
+                    window.location.reload();
+                },
+                onClose: function() {
+                    // Penutupan popup tanpa bayar
+                }
+            });
+        }
     </script>
+    @endif
 
 </body>
 </html>

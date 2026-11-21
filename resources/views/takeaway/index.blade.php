@@ -113,15 +113,24 @@
                             <!-- Product Image / Icon -->
                             <div class="relative w-full aspect-square rounded-xl bg-gradient-to-br from-[#faf7f0] to-[#f0e8db] overflow-hidden mb-2.5 flex items-center justify-center border border-[#e8dfcf]">
                                 @if($product->image_url)
-                                    <img src="{{ $product->image_url }}" alt="{{ $product->name }}" class="w-full h-full object-cover group-hover:scale-105 transition duration-300">
+                                    <img src="{{ $product->image_url }}" alt="{{ $product->name }}" class="w-full h-full object-cover group-hover:scale-105 transition duration-300 {{ !$product->is_available ? 'grayscale opacity-60' : '' }}">
                                 @else
-                                    <div class="text-center p-2 text-stone-400">
+                                    <div class="text-center p-2 text-stone-400 {{ !$product->is_available ? 'opacity-50' : '' }}">
                                         <svg class="w-8 h-8 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                                         </svg>
                                         <span class="text-[10px] font-bold text-[#8f8573] uppercase tracking-wider block mt-1">{{ $category->name }}</span>
                                     </div>
                                 @endif
+
+                                @if(!$product->is_available)
+                                    <div class="absolute inset-0 bg-stone-900/60 backdrop-blur-[1px] flex items-center justify-center z-10">
+                                        <span class="px-2 py-0.5 rounded-md bg-rose-600 text-white font-black text-[9px] tracking-wider uppercase shadow-sm border border-white/20">
+                                            Habis
+                                        </span>
+                                    </div>
+                                @endif
+
                                 <span class="absolute top-2 left-2 bg-[#1f1c18]/80 text-[#eac36c] backdrop-blur-xs text-[9px] font-bold px-2 py-0.5 rounded-md font-mono">
                                     {{ $product->sku }}
                                 </span>
@@ -129,9 +138,16 @@
 
                             <!-- Product Details -->
                             <div>
-                                <span class="text-[10px] font-semibold text-[#8f8573] uppercase tracking-wider block truncate">
-                                    {{ $category->name }}
-                                </span>
+                                <div class="flex items-center justify-between gap-1">
+                                    <span class="text-[10px] font-semibold text-[#8f8573] uppercase tracking-wider block truncate">
+                                        {{ $category->name }}
+                                    </span>
+                                    @if(!$product->is_available)
+                                        <span class="text-[8.5px] font-black text-rose-700 bg-rose-50 px-1.5 py-0.5 rounded border border-rose-200 shrink-0">
+                                            Habis
+                                        </span>
+                                    @endif
+                                </div>
                                 <h3 class="text-xs font-bold text-[#26211a] line-clamp-2 mt-0.5 leading-snug group-hover:text-[#a87f1c] transition">
                                     {{ $product->name }}
                                 </h3>
@@ -147,15 +163,21 @@
 
                                 <!-- Action Button: Add -->
                                 <div id="card-action-{{ $product->id }}" class="shrink-0">
-                                    <button type="button" id="btn-add-{{ $product->id }}"
-                                        onclick="addToTakeawayCart({{ $product->id }}, '{{ addslashes($product->name) }}', {{ (float)$product->selling_price }})"
-                                        class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-[#c59b27] hover:bg-[#a87f1c] active:scale-95 text-stone-950 font-black text-xs transition shadow-xs"
-                                        title="Tambah ke Pesanan">
-                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                                        </svg>
-                                        <span>Tambah</span>
-                                    </button>
+                                    @if(!$product->is_available)
+                                        <span class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-rose-50 text-rose-700 border border-rose-200 font-bold text-xs cursor-not-allowed select-none">
+                                            Habis
+                                        </span>
+                                    @else
+                                        <button type="button" id="btn-add-{{ $product->id }}"
+                                            onclick="addToTakeawayCart({{ $product->id }}, '{{ addslashes($product->name) }}', {{ (float)$product->selling_price }})"
+                                            class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-[#c59b27] hover:bg-[#a87f1c] active:scale-95 text-stone-950 font-black text-xs transition shadow-xs"
+                                            title="Tambah ke Pesanan">
+                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                                            </svg>
+                                            <span>Tambah</span>
+                                        </button>
+                                    @endif
                                 </div>
                             </div>
                         </div>
@@ -379,13 +401,21 @@
                             </div>
                         </div>
 
-                        <a href="{{ route('pos.receipt', $sale->id) }}" target="_blank"
-                            class="w-full text-center py-1.5 rounded-xl bg-white hover:bg-[#ede7da] border border-[#dcd4c5] text-xs font-bold text-[#2c261e] transition shadow-2xs flex items-center justify-center gap-1.5">
-                            <svg class="w-3.5 h-3.5 text-[#8f8573]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
-                            </svg>
-                            Lihat / Cetak Struk
-                        </a>
+                        <div class="grid grid-cols-2 gap-1.5 pt-0.5">
+                            <a href="{{ route('pos.receipt', $sale->id) }}" target="_blank"
+                                class="text-center py-1.5 px-2 rounded-xl bg-white hover:bg-[#ede7da] border border-[#dcd4c5] text-[11px] font-bold text-[#2c261e] transition shadow-2xs flex items-center justify-center gap-1">
+                                <svg class="w-3.5 h-3.5 text-[#8f8573]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                                </svg>
+                                <span>Cetak Struk</span>
+                            </a>
+                            <a href="{{ route('pos.receipt', $sale->id) }}?auto_wa=1" target="_blank"
+                                class="text-center py-1.5 px-2 rounded-xl bg-[#25D366] hover:bg-[#20ba59] active:scale-95 text-white text-[11px] font-bold transition shadow-2xs flex items-center justify-center gap-1"
+                                title="{{ $sale->customer_phone ? 'Kirim ke ' . $sale->customer_phone : 'Kirim Struk WA' }}">
+                                <i class="fa-brands fa-whatsapp text-xs"></i>
+                                <span>Kirim WA</span>
+                            </a>
+                        </div>
                     </div>
                 @endforeach
             </div>
@@ -414,6 +444,11 @@
         </div>
 
         <div class="space-y-2 pt-2">
+            <a id="modalWaReceiptLink" href="#" target="_blank"
+                class="w-full py-2.5 px-4 rounded-xl bg-[#25D366] hover:bg-[#20ba59] active:scale-95 text-white font-extrabold text-xs transition flex items-center justify-center gap-2 shadow-xs cursor-pointer">
+                <i class="fa-brands fa-whatsapp text-base"></i>
+                <span id="modalWaReceiptBtnText">Kirim Struk ke WhatsApp Pelanggan</span>
+            </a>
             <a id="modalReceiptLink" href="#" target="_blank"
                 class="w-full py-2.5 px-4 rounded-xl bg-[#c59b27] hover:bg-[#a87f1c] text-stone-950 font-extrabold text-xs transition flex items-center justify-center gap-2 shadow-xs">
                 <svg class="w-4 h-4 text-stone-950" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -797,6 +832,19 @@
             document.getElementById('modalSuccessMessage').innerText = data.message;
             document.getElementById('modalChangeAmount').innerText = formatRupiah(data.change_amount || 0);
             document.getElementById('modalReceiptLink').href = data.receipt_url;
+
+            const modalWaLink = document.getElementById('modalWaReceiptLink');
+            const modalWaBtnText = document.getElementById('modalWaReceiptBtnText');
+            const targetPhone = customerPhone || (data.sale && data.sale.customer_phone) || '';
+            if (modalWaLink) {
+                modalWaLink.href = data.receipt_url + '?auto_wa=1';
+                if (targetPhone) {
+                    modalWaBtnText.innerText = 'Kirim Struk ke WhatsApp (' + targetPhone + ')';
+                } else {
+                    modalWaBtnText.innerText = 'Kirim Struk ke WhatsApp Pelanggan';
+                }
+            }
+
             document.getElementById('successModal').classList.remove('hidden');
 
         } catch (err) {

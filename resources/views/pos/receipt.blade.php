@@ -2,23 +2,7 @@
 
 @push('styles')
 <style>
-@page {
-    size: 58mm auto;
-    margin: 0;
-}
 @media print {
-    * {
-        -webkit-print-color-adjust: exact !important;
-        print-color-adjust: exact !important;
-    }
-    html, body {
-        width: 58mm !important;
-        min-width: 58mm !important;
-        max-width: 58mm !important;
-        margin: 0 !important;
-        padding: 0 !important;
-        background: #ffffff !important;
-    }
     body * {
         visibility: hidden;
     }
@@ -29,17 +13,12 @@
         position: absolute;
         left: 0;
         top: 0;
-        width: 58mm !important;
-        max-width: 58mm !important;
-        min-width: 58mm !important;
-        margin: 0 !important;
-        padding: 1.5mm 1.5mm !important; /* Margin sangat sedikit sesuai ukuran thermal 58mm */
+        width: 100%;
+        max-width: 80mm;
+        margin: 0 auto;
+        padding: 10px;
         box-shadow: none !important;
         border: none !important;
-        border-radius: 0 !important;
-        background: #ffffff !important;
-        color: #000000 !important;
-        box-sizing: border-box !important;
     }
     .no-print {
         display: none !important;
@@ -60,27 +39,23 @@
             </span>
             <div>
                 <h2 class="text-xl font-black text-slate-800">Transaksi Berhasil!</h2>
-                <p class="text-xs text-slate-500">Struk digital 58mm telah dibuat dan tersimpan aman di sistem.</p>
+                <p class="text-xs text-slate-500">Struk digital telah dibuat dan tersimpan aman di sistem.</p>
             </div>
         </div>
 
         <div class="flex items-center gap-2">
-            <div class="flex items-center gap-1.5">
-                <button type="button" onclick="handlePrint()"
-                    class="inline-flex items-center gap-2 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 text-xs font-bold px-4 py-2.5 rounded-xl shadow-xs transition cursor-pointer">
-                    <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
-                    </svg>
-                    <span>Cetak Struk</span>
-                </button>
-                <button type="button" onclick="openPrintModeModal()" title="Pilihan Tipe Printer (Bluetooth / USB)"
-                    class="p-2.5 rounded-xl bg-white hover:bg-slate-50 border border-slate-200 text-slate-400 hover:text-slate-600 shadow-xs transition cursor-pointer">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                    </svg>
-                </button>
-            </div>
+            <button type="button" id="btnShareWhatsApp" onclick="openWhatsAppReceiptDialog()"
+                class="inline-flex items-center gap-2 bg-[#25D366] hover:bg-[#20ba59] active:scale-95 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow-xs transition cursor-pointer">
+                <i class="fa-brands fa-whatsapp text-base"></i>
+                <span>Kirim Struk WA</span>
+            </button>
+            <button type="button" onclick="window.print()"
+                class="inline-flex items-center gap-2 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 text-xs font-bold px-4 py-2.5 rounded-xl shadow-xs transition">
+                <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                </svg>
+                Cetak Struk
+            </button>
             @if(auth()->user()->isCashier() || auth()->user()->isAdmin())
                 <a href="{{ route('takeaway.index') }}"
                     class="inline-flex items-center gap-2 bg-[#c59b27] hover:bg-[#a87f1c] text-stone-950 text-xs font-extrabold px-4 py-2.5 rounded-xl shadow-md transition transform active:scale-95">
@@ -101,20 +76,20 @@
         </div>
     </div>
 
-    <!-- Digital Receipt Card (Ukuran 58mm dengan margin minimal) -->
-    <div id="printable-receipt" class="bg-white rounded-2xl border border-slate-200/90 shadow-xl p-3.5 sm:p-4 font-sans w-full max-w-[340px] mx-auto text-slate-800">
+    <!-- Digital Receipt Card -->
+    <div id="printable-receipt" class="bg-white rounded-3xl border border-slate-200/90 shadow-xl p-8 font-sans max-w-md mx-auto">
         <!-- Store Header -->
-        <div class="text-center pb-3 border-b border-dashed border-slate-300">
-            <img src="{{ $storeLogo }}" alt="{{ $storeName }}" class="w-11 h-11 mx-auto object-contain mb-1.5 drop-shadow-xs" onerror="this.src='{{ asset('images/default-cake.png') }}'">
-            <h3 class="font-extrabold text-sm text-slate-900 tracking-tight uppercase leading-tight">
+        <div class="text-center pb-5 border-b border-dashed border-slate-300">
+            <img src="{{ $storeLogo }}" alt="{{ $storeName }}" class="w-16 h-16 mx-auto object-contain mb-2 drop-shadow-sm" onerror="this.onerror=null; this.src='{{ asset('images/logo.png') }}'">
+            <h3 class="font-extrabold text-lg text-slate-900 tracking-tight uppercase leading-tight">
                 <span>{{ $storeNameLine1 }}</span>
                 @if(!empty($storeNameLine2))
-                    <span class="block text-xs font-bold text-slate-700 mt-0.5">{{ $storeNameLine2 }}</span>
+                    <span class="block text-sm font-bold text-slate-700 mt-0.5">{{ $storeNameLine2 }}</span>
                 @endif
             </h3>
-            <p class="text-[9.5px] text-slate-500 mt-0.5 leading-snug">{{ $storeAddress }}</p>
-            <p class="text-[9.5px] font-semibold text-slate-700 mt-0.5">Telp / WA: {{ $storePhone }}</p>
-            <p class="text-[9px] text-slate-400 mt-0.5">Struk Resmi Pembelian &bull; Jam: {{ $storeHours }}</p>
+            <p class="text-xs text-slate-500 mt-1">{{ $storeAddress }}</p>
+            <p class="text-xs font-semibold text-slate-700 mt-0.5">Telp / WA: {{ $storePhone }}</p>
+            <p class="text-xs text-slate-400 mt-0.5">Struk Resmi Pembelian &bull; Jam Buka: {{ $storeHours }}</p>
         </div>
 
         <!-- Meta Info -->
@@ -130,13 +105,13 @@
         @endphp
 
         @if($isOpenBill)
-            <div class="my-2 px-2.5 py-1.5 rounded-xl bg-amber-50 border border-amber-200 text-center font-mono text-[10px] text-amber-900">
-                <span class="font-bold uppercase tracking-wider block">Nota Tagihan Open Bill</span>
-                <span>Meja: <strong>{{ $sale->openBill->table_number }}</strong> &bull; {{ $receiptSales->count() }} Order Tergabung</span>
+            <div class="mb-3 px-3 py-2 rounded-xl bg-amber-50 border border-amber-200 text-center font-mono text-[11px] text-amber-900">
+                <span class="font-bold uppercase tracking-wider block">Nota Tagihan Open Bill Meja</span>
+                <span>Meja: <strong>{{ $sale->openBill->table_number }}</strong> &bull; {{ $receiptSales->count() }} Pesanan Tergabung</span>
             </div>
         @endif
 
-        <div class="py-2.5 border-b border-dashed border-slate-300 text-[10px] space-y-1 font-mono">
+        <div class="py-4 border-b border-dashed border-slate-300 text-xs space-y-1.5 font-mono">
             <div class="flex justify-between">
                 <span class="text-slate-400">No. {{ $isOpenBill ? 'Bill / Sesi' : 'Transaksi' }}</span>
                 <span class="font-bold text-slate-900">{{ $isOpenBill ? $sale->openBill->bill_number : $sale->transaction_number }}</span>
@@ -144,11 +119,11 @@
             @if($isOpenBill)
                 <div class="flex justify-between">
                     <span class="text-slate-400">Daftar Order</span>
-                    <span class="text-slate-700 font-bold truncate max-w-[170px] text-right">{{ $receiptSales->pluck('transaction_number')->implode(', ') }}</span>
+                    <span class="text-slate-700 font-bold">{{ $receiptSales->pluck('transaction_number')->implode(', ') }}</span>
                 </div>
             @endif
             <div class="flex justify-between">
-                <span class="text-slate-400">Tipe / Meja</span>
+                <span class="text-slate-400">Tipe Pesanan / Meja</span>
                 <span class="text-slate-700 font-bold">
                     @if($sale->table_number === 'TAKEAWAY')
                         <span class="text-purple-700 font-black">Bawa Pulang (Takeaway)</span>
@@ -166,13 +141,20 @@
             @if($sale->customer_name || $sale->openBill?->customer_name)
                 <div class="flex justify-between">
                     <span class="text-slate-400">Pelanggan</span>
-                    <span class="text-slate-700 font-semibold truncate max-w-[170px] text-right">{{ $sale->customer_name ?: $sale->openBill->customer_name }}</span>
+                    <span class="text-slate-700 font-semibold">{{ $sale->customer_name ?: $sale->openBill->customer_name }}</span>
                 </div>
             @endif
             @if($sale->customer_phone)
-                <div class="flex justify-between">
+                <div class="flex justify-between items-center">
                     <span class="text-slate-400">No. HP Pelanggan</span>
-                    <span class="text-slate-700 font-semibold">{{ $sale->customer_phone }}</span>
+                    <div class="flex items-center gap-2">
+                        <span class="text-slate-700 font-semibold">{{ $sale->customer_phone }}</span>
+                        <button type="button" onclick="openWhatsAppReceiptDialog('{{ $sale->customer_phone }}')"
+                            class="no-print inline-flex items-center gap-1 text-[10.5px] font-bold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 px-2 py-0.5 rounded-lg border border-emerald-300 transition cursor-pointer"
+                            title="Kirim Struk ke No. WhatsApp Ini">
+                            <i class="fa-brands fa-whatsapp text-emerald-600"></i> Kirim WA
+                        </button>
+                    </div>
                 </div>
             @endif
             <div class="flex justify-between">
@@ -181,7 +163,7 @@
             </div>
             <div class="flex justify-between">
                 <span class="text-slate-400">Kasir</span>
-                <span class="text-slate-700 font-semibold truncate max-w-[170px] text-right">{{ $receiptCashier }}</span>
+                <span class="text-slate-700 font-semibold">{{ $receiptCashier }}</span>
             </div>
             <div class="flex justify-between">
                 <span class="text-slate-400">Status</span>
@@ -189,46 +171,46 @@
             </div>
         </div>
 
-        <!-- Items Table (Format Ringkas 58mm) -->
-        <div class="py-2.5 border-b border-dashed border-slate-300">
-            <table class="w-full text-[10px] leading-tight">
+        <!-- Items Table -->
+        <div class="py-4 border-b border-dashed border-slate-300">
+            <table class="w-full text-xs">
                 <thead>
-                    <tr class="text-slate-400 text-left font-mono border-b border-slate-100 pb-1">
-                        <th class="pb-1 text-left font-bold">Item</th>
-                        <th class="pb-1 text-center font-bold w-6">Qty</th>
-                        <th class="pb-1 text-right font-bold w-12">Harga</th>
-                        <th class="pb-1 text-right font-bold w-14">Total</th>
+                    <tr class="text-slate-400 text-left font-mono border-b border-slate-100 pb-2">
+                        <th class="pb-1.5">Item</th>
+                        <th class="pb-1.5 text-center">Qty</th>
+                        <th class="pb-1.5 text-right">Harga</th>
+                        <th class="pb-1.5 text-right">Total</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100 font-mono">
                     @foreach($receiptItems as $item)
                         <tr>
-                            <td class="py-1.5 pr-1">
+                            <td class="py-2 pr-1">
                                 <div class="font-bold text-slate-900 leading-tight">{{ $item->product_name_snapshot }}</div>
-                                <div class="text-[8.5px] text-slate-400">{{ $item->sku_snapshot }}</div>
+                                <div class="text-[10px] text-slate-400">{{ $item->sku_snapshot }}</div>
                             </td>
-                            <td class="py-1.5 text-center text-slate-700 align-top">{{ $item->quantity }}</td>
-                            <td class="py-1.5 text-right text-slate-600 align-top">{{ number_format($item->unit_price, 0, ',', '.') }}</td>
-                            <td class="py-1.5 text-right font-bold text-slate-900 align-top">{{ number_format($item->line_total, 0, ',', '.') }}</td>
+                            <td class="py-2 text-center text-slate-700">{{ $item->quantity }}</td>
+                            <td class="py-2 text-right text-slate-600">{{ number_format($item->unit_price, 0, ',', '.') }}</td>
+                            <td class="py-2 text-right font-bold text-slate-900">{{ number_format($item->line_total, 0, ',', '.') }}</td>
                         </tr>
                     @endforeach
                 </tbody>
             </table>
         </div>
 
-        <!-- Summary Totals (58mm) -->
-        <div class="py-2.5 border-b border-dashed border-slate-300 text-[10px] font-mono space-y-1.5">
+        <!-- Summary Totals -->
+        <div class="py-4 border-b border-dashed border-slate-300 text-xs font-mono space-y-2">
             <div class="flex justify-between text-slate-600">
                 <span>Subtotal Item</span>
                 <span>Rp {{ number_format($receiptSubtotal, 0, ',', '.') }}</span>
             </div>
 
-            <div class="flex justify-between text-xs font-black text-slate-900 pt-1.5 border-t border-slate-100">
+            <div class="flex justify-between text-base font-black text-slate-900 pt-2 border-t border-slate-100">
                 <span>TOTAL TAGIHAN</span>
-                <span class="text-emerald-700 text-sm">Rp {{ number_format($receiptTotal, 0, ',', '.') }}</span>
+                <span class="text-emerald-700">Rp {{ number_format($receiptTotal, 0, ',', '.') }}</span>
             </div>
 
-            <div class="pt-1.5 border-t border-slate-100 space-y-1">
+            <div class="pt-2 border-t border-slate-100 space-y-1">
                 <div class="flex justify-between text-slate-600">
                     <span>Metode Bayar</span>
                     <span class="font-bold uppercase">{{ $receiptPayment?->methodLabel() ?? 'TUNAI' }}</span>
@@ -249,394 +231,437 @@
         </div>
 
         <!-- Footer Thank You Note -->
-        <div class="text-center pt-3.5 space-y-0.5 text-[9px] text-slate-400">
+        <div class="text-center pt-6 space-y-1 text-xs text-slate-400">
             <p class="font-bold text-slate-700">Terima kasih atas kunjungan Anda!</p>
-            <p class="text-[8.5px] font-semibold text-slate-600">Hubungi Toko: {{ $storePhone }}</p>
-            <p class="text-[8px] leading-tight text-slate-400">Barang yang sudah dibeli tidak dapat ditukar/dikembalikan tanpa bukti struk ini.</p>
+            <p class="text-[11px] font-semibold text-slate-600">Hubungi Toko: {{ $storePhone }}</p>
+            <p class="text-[11px]">Barang yang sudah dibeli tidak dapat ditukar/dikembalikan tanpa bukti struk ini.</p>
         </div>
     </div>
 </div>
 
-<!-- Modal Pilihan Metode Cetak (Bluetooth vs USB/Sistem) -->
-<div id="printModeModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs hidden no-print">
-    <div class="bg-white rounded-2xl max-w-sm w-full p-5 shadow-2xl border border-slate-100 space-y-4">
-        <div class="flex items-center justify-between border-b border-slate-100 pb-3">
-            <div class="flex items-center gap-2">
-                <span class="p-2 rounded-xl bg-amber-50 text-amber-700">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
-                    </svg>
-                </span>
-                <div>
-                    <h4 class="font-bold text-slate-800 text-sm">Metode Cetak Struk</h4>
-                    <p class="text-[11px] text-slate-500">Pilih koneksi printer thermal 58mm Anda</p>
+@php
+    $receiptLines = [];
+    foreach ($receiptItems as $it) {
+        $receiptLines[] = "• " . $it->product_name_snapshot . " (" . $it->quantity . "x) : Rp " . number_format($it->line_total, 0, ',', '.');
+    }
+    $itemsText = implode("\n", $receiptLines);
+    $trxNum = $isOpenBill ? $sale->openBill->bill_number : $sale->transaction_number;
+    $trxTime = ($sale->openBill?->closed_at ?? $sale->transaction_date)->format('d/m/Y H:i') . ' WIB';
+    $custName = $sale->customer_name ?: ($sale->openBill?->customer_name ?: 'Pelanggan');
+    $custPhone = $sale->customer_phone ?: ($sale->openBill?->sales->pluck('customer_phone')->filter()->first() ?: '');
+    $payMethod = $receiptPayment?->methodLabel() ?? 'TUNAI';
+
+    $defaultWaMessage = "🧾 *STRUK PEMBELIAN - " . strtoupper($storeName) . "*\n"
+        . "----------------------------------------\n"
+        . "No. Transaksi : " . $trxNum . "\n"
+        . "Waktu         : " . $trxTime . "\n"
+        . "Pelanggan     : " . $custName . "\n"
+        . "Kasir         : " . $receiptCashier . "\n"
+        . "Meja / Tipe   : " . ($sale->table_number ? (str_starts_with($sale->table_number, 'Meja') ? $sale->table_number : 'Meja ' . $sale->table_number) : 'Non-Meja') . "\n"
+        . "----------------------------------------\n"
+        . "*RINCIAN PESANAN:*\n"
+        . $itemsText . "\n"
+        . "----------------------------------------\n"
+        . "*Subtotal*    : Rp " . number_format($receiptSubtotal, 0, ',', '.') . "\n"
+        . "*TOTAL BAYAR* : Rp " . number_format($receiptTotal, 0, ',', '.') . "\n"
+        . "Metode Bayar  : " . $payMethod . " (Lunas)\n"
+        . "NOTE          : " . ($receiptNotes ?: '-') . "\n"
+        . "----------------------------------------\n"
+        . "🔗 *Lihat Struk Digital:* " . route('pos.receipt', $sale->id) . "\n"
+        . "📸 _Foto bukti fisik struk resmi terlampir di atas._\n\n"
+        . "Terima kasih banyak telah berkunjung ke *" . $storeName . "*! Semoga harimu menyenangkan 🙏✨";
+@endphp
+
+<!-- MODAL KIRIM STRUK KE WHATSAPP PELANGGAN -->
+<div id="whatsappReceiptModal" class="fixed inset-0 z-50 hidden overflow-y-auto bg-stone-950/70 backdrop-blur-xs flex items-center justify-center p-4 no-print">
+    <div class="relative w-full max-w-md bg-white rounded-3xl border border-[#e5dfd3] shadow-2xl overflow-hidden transform transition-all animate-in fade-in zoom-in-95 duration-150">
+        <!-- Close (X) button -->
+        <button type="button" onclick="closeWhatsAppReceiptDialog()"
+            class="absolute top-4 right-4 w-8 h-8 rounded-full bg-stone-100 hover:bg-stone-200 text-stone-500 hover:text-stone-800 flex items-center justify-center transition cursor-pointer">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+        </button>
+
+        <div class="p-6 space-y-4">
+            <!-- Modal Header -->
+            <div class="text-center space-y-1">
+                <div class="w-14 h-14 rounded-2xl bg-emerald-50 border border-emerald-200 text-[#25D366] flex items-center justify-center mx-auto text-2xl shadow-xs">
+                    <i class="fa-brands fa-whatsapp text-3xl"></i>
+                </div>
+                <h3 class="font-serif-classic font-extrabold text-lg text-[#26211a]">
+                    Kirim Struk ke WhatsApp Pelanggan
+                </h3>
+                <p class="text-xs text-stone-500">
+                    Sistem otomatis menyiapkan <strong>foto struk</strong> dan <strong>rincian teks pesanan</strong> ke nomor WhatsApp pelanggan.
+                </p>
+            </div>
+
+            <!-- WhatsApp Number Input -->
+            <div class="space-y-1.5 text-left">
+                <label class="block text-xs font-bold text-stone-700">Nomor WhatsApp Pelanggan *</label>
+                <div class="relative">
+                    <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-xs font-bold text-stone-400 select-none">
+                        +62
+                    </span>
+                    <input type="tel" id="waRecipientPhone"
+                        placeholder="Contoh: 81234567890 (atau 0812...)"
+                        class="w-full pl-12 pr-3.5 py-2.5 rounded-xl border border-stone-300 text-xs font-bold text-stone-900 bg-stone-50 focus:bg-white focus:ring-2 focus:ring-[#25D366] focus:border-[#25D366] focus:outline-none transition">
+                </div>
+                <p id="waPhoneHelpText" class="text-[11px] text-stone-400">
+                    Otomatis mengambil nomor yang diisi pelanggan saat pemesanan keranjang.
+                </p>
+            </div>
+
+            <!-- Preview Struk Info Box -->
+            <div class="bg-[#faf7f0] rounded-2xl p-3.5 border border-[#e5dfd3] text-left text-xs space-y-1.5">
+                <div class="flex justify-between items-center text-[11px]">
+                    <span class="text-stone-400 font-mono">No. Transaksi:</span>
+                    <span class="font-mono font-bold text-[#8a681c]">{{ $trxNum }}</span>
+                </div>
+                <div class="flex justify-between items-center text-[11px]">
+                    <span class="text-stone-400">Pelanggan:</span>
+                    <span class="font-bold text-stone-800">{{ $custName }}</span>
+                </div>
+                <div class="flex justify-between items-center text-xs pt-1 border-t border-[#ede7dc]">
+                    <span class="text-stone-500 font-bold">Total Pembayaran:</span>
+                    <span class="font-serif-classic font-extrabold text-[#1b4332] text-sm">
+                        Rp {{ number_format($receiptTotal, 0, ',', '.') }}
+                    </span>
                 </div>
             </div>
-            <button type="button" onclick="closePrintModeModal()" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg cursor-pointer">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-            </button>
+
+            <!-- Message Preview -->
+            <div class="text-left space-y-1">
+                <label class="block text-[11px] font-bold text-stone-600 uppercase tracking-wider">
+                    Pratinjau Pesan WhatsApp:
+                </label>
+                <textarea id="waMessagePreview" rows="4"
+                    class="w-full p-2.5 rounded-xl border border-stone-200 bg-stone-50 text-[11px] font-mono text-stone-700 leading-relaxed resize-none focus:outline-none select-all"></textarea>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="grid grid-cols-2 gap-3 pt-2">
+                <button type="button" onclick="closeWhatsAppReceiptDialog()"
+                    class="w-full py-2.5 px-4 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-700 font-bold text-xs transition border border-stone-200 cursor-pointer">
+                    Batal
+                </button>
+                <button type="button" id="btnConfirmSendWhatsApp" onclick="executeSendWhatsAppReceipt()"
+                    class="w-full py-2.5 px-4 rounded-xl font-bold text-xs transition shadow-xs flex items-center justify-center gap-1.5 text-white bg-[#25D366] hover:bg-[#20ba59] active:scale-95 cursor-pointer">
+                    <i class="fa-brands fa-whatsapp text-sm"></i>
+                    <span>Kirim Foto & Pesan</span>
+                </button>
+            </div>
         </div>
+    </div>
+</div>
 
-        <div class="space-y-2.5">
-            <button type="button" onclick="selectPrintMode('bluetooth')"
-                class="w-full text-left p-3.5 rounded-xl border border-slate-200 hover:border-amber-500 hover:bg-amber-50/40 transition group flex items-start gap-3 cursor-pointer">
-                <div class="p-2 rounded-lg bg-blue-50 text-blue-600 group-hover:bg-amber-500 group-hover:text-white transition">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3v18l7-5-7-5 7-5-7-3z" />
-                    </svg>
-                </div>
-                <div class="flex-1">
-                    <div class="flex items-center justify-between">
-                        <span class="font-bold text-xs text-slate-800">Bluetooth Thermal</span>
-                        <span class="text-[9.5px] px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-bold">Langsung Web</span>
-                    </div>
-                    <p class="text-[11px] text-slate-500 mt-0.5 leading-snug">
-                        Langsung cetak via Bluetooth dari Chrome / Edge tanpa install aplikasi atau driver (Laptop & HP).
-                    </p>
-                </div>
-            </button>
-
-            <button type="button" onclick="selectPrintMode('system')"
-                class="w-full text-left p-3.5 rounded-xl border border-slate-200 hover:border-amber-500 hover:bg-amber-50/40 transition group flex items-start gap-3 cursor-pointer">
-                <div class="p-2 rounded-lg bg-slate-100 text-slate-700 group-hover:bg-amber-500 group-hover:text-white transition">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                    </svg>
-                </div>
-                <div class="flex-1">
-                    <div class="flex items-center justify-between">
-                        <span class="font-bold text-xs text-slate-800">Kabel USB / Driver Sistem</span>
-                        <span class="text-[9.5px] px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 font-bold">Dialog Windows</span>
-                    </div>
-                    <p class="text-[11px] text-slate-500 mt-0.5 leading-snug">
-                        Cetak lewat kabel USB atau driver printer thermal yang terpasang di sistem operasi laptop/PC.
-                    </p>
-                </div>
-            </button>
+<!-- SUCCESS INSTRUCTION MODAL -->
+<div id="waSuccessToastModal" class="fixed inset-0 z-50 hidden bg-stone-950/70 backdrop-blur-xs flex items-center justify-center p-4 no-print">
+    <div class="relative w-full max-w-sm bg-white rounded-3xl border border-[#e5dfd3] shadow-2xl p-6 text-center space-y-4 animate-in fade-in zoom-in-95 duration-150">
+        <div class="w-14 h-14 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-600 flex items-center justify-center mx-auto text-2xl shadow-xs">
+            <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
         </div>
-
-        <div class="pt-2 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
-            <label class="inline-flex items-center gap-1.5 cursor-pointer text-[11px]">
-                <input type="checkbox" id="rememberPrintMode" checked class="rounded text-amber-600 focus:ring-amber-500">
-                <span>Ingat pilihan saya</span>
-            </label>
-            <button type="button" onclick="closePrintModeModal()" class="text-[11px] font-bold text-slate-500 hover:text-slate-800 cursor-pointer">
-                Batal
+        <div>
+            <h4 id="waSuccessToastTitle" class="font-serif-classic font-extrabold text-lg text-[#26211a]">Menghubungkan ke WhatsApp...</h4>
+            <p id="waSuccessToastMessage" class="text-xs text-stone-600 mt-1 leading-relaxed"></p>
+        </div>
+        <div class="bg-amber-50 rounded-2xl p-3 border border-amber-200 text-[11px] text-amber-900 text-left space-y-1.5">
+            <span class="font-bold block text-amber-950">💡 Panduan Kirim Foto Struk ke Pelanggan:</span>
+            <p>1. Foto struk telah <strong>otomatis disalin ke clipboard</strong> dan diunduh.</p>
+            <p>2. Pada jendela chat WhatsApp, klik kolom ketik lalu tekan <strong>Ctrl + V</strong> untuk menempelkan foto struk.</p>
+            <p>3. Tekan <strong>Enter / Kirim</strong> untuk mengirim foto & pesan ke nomor pelanggan.</p>
+        </div>
+        <div class="space-y-2 pt-1">
+            <a id="btnDirectWaDesktop" href="#"
+                class="w-full py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs transition shadow-xs flex items-center justify-center gap-2 cursor-pointer">
+                <i class="fa-brands fa-whatsapp text-sm text-[#25D366]"></i>
+                <span>Buka WhatsApp Desktop</span>
+            </a>
+            <a id="btnDirectWaWeb" href="#" target="_blank"
+                class="w-full py-2.5 rounded-xl bg-[#25D366] hover:bg-[#20ba59] text-white font-bold text-xs transition shadow-xs flex items-center justify-center gap-2 cursor-pointer">
+                <i class="fa-brands fa-whatsapp text-sm"></i>
+                <span>Buka WhatsApp Web</span>
+            </a>
+            <button type="button" onclick="document.getElementById('waSuccessToastModal').classList.add('hidden')"
+                class="w-full py-2 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-700 font-bold text-xs transition border border-stone-200 cursor-pointer">
+                Tutup
             </button>
         </div>
     </div>
 </div>
-@endsection
 
 @push('scripts')
+<script src="https://cdn.jsdelivr.net/npm/html2canvas-pro@2.6.4/dist/html2canvas-pro.min.js"></script>
 <script>
-    const receiptData = {
-        storeNameLine1: @json($storeNameLine1),
-        storeNameLine2: @json($storeNameLine2 ?? ''),
-        storeAddress: @json($storeAddress ?? ''),
-        storePhone: @json($storePhone ?? ''),
-        storeHours: @json($storeHours ?? ''),
-        trxNumber: @json($isOpenBill ? $sale->openBill->bill_number : $sale->transaction_number),
-        tableNumber: @json($sale->table_number ?? 'M001'),
-        customerName: @json($sale->customer_name ?: ($sale->openBill?->customer_name ?? '')),
-        customerPhone: @json($sale->customer_phone ?? ''),
-        trxTime: @json(($sale->openBill?->closed_at ?? $sale->transaction_date)->format('d/m/Y H:i:s')),
-        cashierName: @json($receiptCashier),
-        isPaid: @json($sale->isPaid()),
-        paymentMethod: @json($receiptPayment?->methodLabel() ?? 'TUNAI'),
-        subtotal: @json((float)$receiptSubtotal),
-        total: @json((float)$receiptTotal),
-        amountTendered: @json((float)($receiptPayment->amount_tendered ?? $receiptTotal)),
-        changeAmount: @json((float)($receiptPayment->change_amount ?? 0)),
-        note: @json($receiptNotes ?: '-'),
-        items: [
-            @foreach($receiptItems as $item)
-            {
-                name: @json($item->product_name_snapshot),
-                sku: @json($item->sku_snapshot ?? ''),
-                quantity: @json((int)$item->quantity),
-                price: @json((float)$item->unit_price),
-                total: @json((float)$item->line_total)
-            },
-            @endforeach
-        ]
+    const WA_RECEIPT_CONFIG = {
+        storeName: @json($storeName),
+        trxNumber: @json($trxNum),
+        defaultPhone: @json($custPhone),
+        defaultMessage: @json($defaultWaMessage),
     };
 
-    function formatRupiah(num) {
-        return new Intl.NumberFormat('id-ID').format(Math.round(num || 0));
-    }
+    function openWhatsAppReceiptDialog(overridePhone) {
+        const phone = overridePhone || WA_RECEIPT_CONFIG.defaultPhone || '';
+        document.getElementById('waRecipientPhone').value = cleanDisplayPhone(phone);
+        document.getElementById('waMessagePreview').value = WA_RECEIPT_CONFIG.defaultMessage;
 
-    function textToBytes(str) {
-        const encoder = new TextEncoder();
-        return Array.from(encoder.encode(str));
-    }
+        const modal = document.getElementById('whatsappReceiptModal');
+        modal.classList.remove('hidden');
+        document.body.classList.add('overflow-hidden');
 
-    function padLine(left, right, width = 32) {
-        const l = String(left || '');
-        const r = String(right || '');
-        const spaceCount = Math.max(1, width - l.length - r.length);
-        return l + ' '.repeat(spaceCount) + r;
-    }
-
-    function buildEscPosBytes(data) {
-        const ESC = 0x1B;
-        const GS = 0x1D;
-        const LINE_WIDTH = 32;
-        let bytes = [];
-
-        // 1. Inisialisasi printer ESC/POS
-        bytes.push(ESC, 0x40);
-
-        // 2. Header Toko (Center Alignment)
-        bytes.push(ESC, 0x61, 0x01);
-        bytes.push(GS, 0x21, 0x11); // Double height & width
-        bytes.push(...textToBytes((data.storeNameLine1 || 'KASIR') + "\n"));
-        bytes.push(GS, 0x21, 0x00); // Normal size
-
-        if (data.storeNameLine2) {
-            bytes.push(ESC, 0x45, 0x01); // Bold on
-            bytes.push(...textToBytes(data.storeNameLine2 + "\n"));
-            bytes.push(ESC, 0x45, 0x00);
-        }
-
-        if (data.storeAddress) {
-            bytes.push(...textToBytes(data.storeAddress + "\n"));
-        }
-        if (data.storePhone) {
-            bytes.push(...textToBytes("Telp / WA: " + data.storePhone + "\n"));
-        }
-        if (data.storeHours) {
-            bytes.push(...textToBytes("Jam: " + data.storeHours + "\n"));
-        }
-
-        // Pembatas garis 58mm (32 kolom)
-        bytes.push(ESC, 0x61, 0x00); // Left align
-        bytes.push(...textToBytes("-".repeat(LINE_WIDTH) + "\n"));
-
-        // Metadata Transaksi
-        bytes.push(...textToBytes(padLine("No. Transaksi", data.trxNumber, LINE_WIDTH) + "\n"));
-        let tableLabel = data.tableNumber === 'ONLINE' ? 'Pesanan Online' : (data.tableNumber === 'TAKEAWAY' ? 'Bawa Pulang' : (data.tableNumber === 'KIOSK' ? 'Kiosk Mandiri' : 'Meja ' + data.tableNumber));
-        bytes.push(...textToBytes(padLine("Tipe / Meja", tableLabel, LINE_WIDTH) + "\n"));
-        if (data.customerName) {
-            bytes.push(...textToBytes(padLine("Pelanggan", data.customerName, LINE_WIDTH) + "\n"));
-        }
-        if (data.customerPhone) {
-            bytes.push(...textToBytes(padLine("No. HP", data.customerPhone, LINE_WIDTH) + "\n"));
-        }
-        bytes.push(...textToBytes(padLine("Waktu", data.trxTime, LINE_WIDTH) + "\n"));
-        bytes.push(...textToBytes(padLine("Kasir", data.cashierName, LINE_WIDTH) + "\n"));
-        bytes.push(...textToBytes(padLine("Status", data.isPaid ? "LUNAS" : "BELUM LUNAS", LINE_WIDTH) + "\n"));
-
-        // Pembatas Menu
-        bytes.push(...textToBytes("-".repeat(LINE_WIDTH) + "\n"));
-
-        // Rincian Menu Pesanan
-        (data.items || []).forEach(item => {
-            bytes.push(ESC, 0x45, 0x01); // Nama item cetak tebal
-            bytes.push(...textToBytes(item.name + "\n"));
-            bytes.push(ESC, 0x45, 0x00);
-            const qtyPrice = `  ${item.quantity} x ${formatRupiah(item.price)}`;
-            const lineTotal = formatRupiah(item.total);
-            bytes.push(...textToBytes(padLine(qtyPrice, lineTotal, LINE_WIDTH) + "\n"));
-        });
-
-        // Pembatas Total
-        bytes.push(...textToBytes("-".repeat(LINE_WIDTH) + "\n"));
-
-        // Subtotal & Total
-        bytes.push(...textToBytes(padLine("Subtotal Item", "Rp " + formatRupiah(data.subtotal), LINE_WIDTH) + "\n"));
-        bytes.push(ESC, 0x45, 0x01); // Bold
-        bytes.push(GS, 0x21, 0x01);  // Double height
-        bytes.push(...textToBytes(padLine("TOTAL TAGIHAN", "Rp " + formatRupiah(data.total), LINE_WIDTH) + "\n"));
-        bytes.push(GS, 0x21, 0x00);  // Normal size
-        bytes.push(ESC, 0x45, 0x00);
-
-        // Informasi Pembayaran
-        bytes.push(...textToBytes(padLine("Metode Bayar", data.paymentMethod, LINE_WIDTH) + "\n"));
-        if (data.amountTendered > 0) {
-            bytes.push(...textToBytes(padLine("Uang Diterima", "Rp " + formatRupiah(data.amountTendered), LINE_WIDTH) + "\n"));
-            bytes.push(...textToBytes(padLine("Uang Kembalian", "Rp " + formatRupiah(data.changeAmount), LINE_WIDTH) + "\n"));
-        }
-
-        // Baris NOTE Struk
-        const noteStr = String(data.note || "-");
-        if (noteStr.length <= (LINE_WIDTH - 6)) {
-            bytes.push(...textToBytes(padLine("NOTE:", noteStr, LINE_WIDTH) + "\n"));
-        } else {
-            bytes.push(...textToBytes("NOTE:\n" + noteStr + "\n"));
-        }
-
-        // Footer Struk
-        bytes.push(ESC, 0x61, 0x01); // Center align
-        bytes.push(...textToBytes("-".repeat(LINE_WIDTH) + "\n"));
-        bytes.push(...textToBytes("Terima kasih atas kunjungan Anda!\n"));
-        if (data.storePhone) {
-            bytes.push(...textToBytes("Hubungi Toko: " + data.storePhone + "\n"));
-        }
-        bytes.push(...textToBytes("Barang yg sudah dibeli tdk dpt\n"));
-        bytes.push(...textToBytes("ditukar tanpa bukti struk ini.\n"));
-
-        // Feed kertas & potong kertas (cut)
-        bytes.push(...textToBytes("\n\n\n\n"));
-        bytes.push(GS, 0x56, 0x41, 0x03);
-
-        return new Uint8Array(bytes);
-    }
-
-    let bluetoothDevice = null;
-    let printCharacteristic = null;
-
-    async function getBluetoothPrintCharacteristic() {
-        if (bluetoothDevice && bluetoothDevice.gatt && bluetoothDevice.gatt.connected && printCharacteristic) {
-            return printCharacteristic;
-        }
-
-        if (!navigator.bluetooth) {
-            throw new Error("Web Bluetooth tidak didukung pada browser ini. Gunakan Google Chrome di Android.");
-        }
-
-        const knownServices = [
-            '000018f0-0000-1000-8000-00805f9b34fb', // Standard Printer ESC/POS
-            '49535343-fe7d-4ae5-8fa9-9fafd205e455', // ISSC Transparent Serial
-            '0000ff00-0000-1000-8000-00805f9b34fb',
-            '0000ae00-0000-1000-8000-00805f9b34fb',
-            '0000ff01-0000-1000-8000-00805f9b34fb',
-            'e7810a71-73ae-499d-8c15-faa9aef0c3f2'
-        ];
-
-        bluetoothDevice = await navigator.bluetooth.requestDevice({
-            acceptAllDevices: true,
-            optionalServices: knownServices
-        });
-
-        if (!bluetoothDevice) {
-            throw new Error("Tidak ada perangkat Bluetooth yang dipilih.");
-        }
-
-        const server = await bluetoothDevice.gatt.connect();
-
-        // Cari characteristic yang mendukung fungsi write
-        for (const serviceUuid of knownServices) {
-            try {
-                const service = await server.getPrimaryService(serviceUuid);
-                const chars = await service.getCharacteristics();
-                for (const ch of chars) {
-                    if (ch.properties.write || ch.properties.writeWithoutResponse) {
-                        printCharacteristic = ch;
-                        return printCharacteristic;
-                    }
-                }
-            } catch (e) {}
-        }
-
-        // Cek seluruh primary service pada printer
-        try {
-            const services = await server.getPrimaryServices();
-            for (const service of services) {
-                const chars = await service.getCharacteristics();
-                for (const ch of chars) {
-                    if (ch.properties.write || ch.properties.writeWithoutResponse) {
-                        printCharacteristic = ch;
-                        return printCharacteristic;
-                    }
-                }
-            }
-        } catch (e) {}
-
-        throw new Error("Layanan cetak ESC/POS tidak ditemukan pada perangkat Bluetooth ini.");
-    }
-
-    async function sendBytesToPrinter(char, bytes) {
-        const CHUNK_SIZE = 64;
-        for (let i = 0; i < bytes.length; i += CHUNK_SIZE) {
-            const chunk = bytes.slice(i, i + CHUNK_SIZE);
-            if (char.properties.writeWithoutResponse) {
-                await char.writeValueWithoutResponse(chunk);
-            } else {
-                await char.writeValue(chunk);
-            }
-            await new Promise(res => setTimeout(res, 25));
+        if (!phone) {
+            setTimeout(() => document.getElementById('waRecipientPhone').focus(), 150);
         }
     }
 
-    function openPrintModeModal() {
-        const modal = document.getElementById('printModeModal');
-        if (modal) modal.classList.remove('hidden');
+    function closeWhatsAppReceiptDialog() {
+        const modal = document.getElementById('whatsappReceiptModal');
+        modal.classList.add('hidden');
+        document.body.classList.remove('overflow-hidden');
     }
 
-    function closePrintModeModal() {
-        const modal = document.getElementById('printModeModal');
-        if (modal) modal.classList.add('hidden');
-    }
-
-    async function selectPrintMode(mode) {
-        const remember = document.getElementById('rememberPrintMode')?.checked ?? true;
-        if (remember) {
-            localStorage.setItem('receipt_print_mode', mode);
+    function cleanDisplayPhone(phone) {
+        if (!phone) return '';
+        let cleaned = phone.toString().trim().replace(/[^0-9]/g, '');
+        if (cleaned.startsWith('62')) {
+            cleaned = cleaned.substring(2);
+        } else if (cleaned.startsWith('0')) {
+            cleaned = cleaned.substring(1);
         }
-        closePrintModeModal();
-
-        if (mode === 'bluetooth') {
-            await printViaBluetooth();
-        } else {
-            window.print();
-        }
+        return cleaned;
     }
 
-    async function printViaBluetooth() {
-        if (!navigator.bluetooth) {
-            alert("Browser ini belum mendukung Web Bluetooth. Silakan gunakan Google Chrome atau Microsoft Edge dengan koneksi HTTPS pada Laptop atau HP/Tablet Anda.");
-            window.print();
+    function formatInternationalPhone(phone) {
+        if (!phone) return '';
+        let cleaned = phone.toString().trim().replace(/[^0-9]/g, '');
+        if (cleaned.startsWith('0')) {
+            return '62' + cleaned.substring(1);
+        }
+        if (!cleaned.startsWith('62')) {
+            return '62' + cleaned;
+        }
+        return cleaned;
+    }
+
+    async function executeSendWhatsAppReceipt() {
+        const rawPhone = document.getElementById('waRecipientPhone').value.trim();
+        if (!rawPhone) {
+            alert('Silakan masukkan nomor WhatsApp pelanggan terlebih dahulu.');
+            document.getElementById('waRecipientPhone').focus();
             return;
         }
 
+        const intlPhone = formatInternationalPhone(rawPhone);
+        if (intlPhone.length < 9) {
+            alert('Nomor WhatsApp tidak valid (terlalu pendek).');
+            return;
+        }
+
+        const messageText = document.getElementById('waMessagePreview').value.trim();
+        const sendBtn = document.getElementById('btnConfirmSendWhatsApp');
+        const originalBtnHtml = sendBtn.innerHTML;
+
+        sendBtn.disabled = true;
+        sendBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin text-sm"></i> Menyiapkan Foto Struk...';
+
         try {
-            const char = await getBluetoothPrintCharacteristic();
-            const bytes = buildEscPosBytes(receiptData);
-            await sendBytesToPrinter(char, bytes);
+            const receiptElement = document.getElementById('printable-receipt');
+            if (!receiptElement) {
+                throw new Error('Elemen struk tidak ditemukan.');
+            }
+
+            const h2c = window.html2canvas || html2canvas;
+            if (!h2c) {
+                throw new Error('Pustaka pembuat foto struk belum termuat.');
+            }
+
+            const canvas = await h2c(receiptElement, {
+                scale: 2,
+                useCORS: true,
+                backgroundColor: '#ffffff',
+                logging: false,
+            });
+
+            const filename = 'Struk-' + WA_RECEIPT_CONFIG.trxNumber + '.png';
+
+            canvas.toBlob(async function(blob) {
+                if (!blob) {
+                    alert('Gagal menghasilkan foto struk.');
+                    sendBtn.disabled = false;
+                    sendBtn.innerHTML = originalBtnHtml;
+                    return;
+                }
+
+                const file = new File([blob], filename, { type: 'image/png' });
+
+                // Deteksi apakah perangkat adalah HP / Tablet atau Laptop / Komputer PC
+                const ua = navigator.userAgent || '';
+                const isMobileOrTablet = (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini|Mobile|Tablet/i.test(ua)
+                    || (/Macintosh/i.test(ua) && navigator.maxTouchPoints > 1))
+                    && !/Windows NT/i.test(ua);
+
+                const waDesktopUrl = 'whatsapp://send?phone=' + intlPhone + '&text=' + encodeURIComponent(messageText);
+                const waWebUrl = 'https://web.whatsapp.com/send?phone=' + intlPhone + '&text=' + encodeURIComponent(messageText);
+                const waApiUrl = 'https://api.whatsapp.com/send?phone=' + intlPhone + '&text=' + encodeURIComponent(messageText);
+
+                // =========================================================================
+                // 1. JIKA DIAKSES DARI HP ATAU TABLET:
+                // Sistem langsung mencari dan membuka aplikasi WhatsApp yang terunduh di HP/tablet
+                // =========================================================================
+                if (isMobileOrTablet) {
+                    // A. Prioritaskan Web Share API jika didukung (melampirkan foto struk langsung ke aplikasi WA)
+                    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                        try {
+                            await navigator.share({
+                                files: [file],
+                                title: 'Struk ' + WA_RECEIPT_CONFIG.trxNumber + ' - ' + WA_RECEIPT_CONFIG.storeName,
+                                text: messageText,
+                            });
+                            closeWhatsAppReceiptDialog();
+                            sendBtn.disabled = false;
+                            sendBtn.innerHTML = originalBtnHtml;
+                            return;
+                        } catch (shareErr) {
+                            if (shareErr.name === 'AbortError') {
+                                sendBtn.disabled = false;
+                                sendBtn.innerHTML = originalBtnHtml;
+                                return;
+                            }
+                        }
+                    }
+
+                    // B. Luncurkan aplikasi WhatsApp di HP melalui skema whatsapp://
+                    closeWhatsAppReceiptDialog();
+                    sendBtn.disabled = false;
+                    sendBtn.innerHTML = originalBtnHtml;
+
+                    window.location.href = waDesktopUrl;
+
+                    // Fallback jika aplikasi belum diunduh di perangkat
+                    const mobileStart = Date.now();
+                    setTimeout(function() {
+                        if (Date.now() - mobileStart < 2500) {
+                            window.location.href = waApiUrl;
+                        }
+                    }, 1500);
+
+                    return;
+                }
+
+                // =========================================================================
+                // 2. JIKA DIAKSES DARI LAPTOP / KOMPUTER PC (DESKTOP):
+                // A. Salin foto struk ke Clipboard & unduh file sebagai cadangan
+                // =========================================================================
+                try {
+                    await navigator.clipboard.write([
+                        new ClipboardItem({ 'image/png': blob })
+                    ]);
+                } catch (clipErr) {
+                    console.log('Clipboard write tidak diizinkan:', clipErr);
+                }
+
+                try {
+                    const dlLink = document.createElement('a');
+                    dlLink.download = filename;
+                    dlLink.href = canvas.toDataURL('image/png');
+                    document.body.appendChild(dlLink);
+                    dlLink.click();
+                    document.body.removeChild(dlLink);
+                } catch (dlErr) {
+                    console.log('Download file:', dlErr);
+                }
+
+                // B. Buka WhatsApp Desktop terlebih dahulu!
+                // Jika WhatsApp Desktop tidak terpasang di laptop, baru otomatis membuka WhatsApp Web
+                let desktopAppDetected = false;
+
+                const markAppDetected = function() {
+                    desktopAppDetected = true;
+                    window.removeEventListener('blur', markAppDetected);
+                    document.removeEventListener('visibilitychange', markAppDetected);
+                };
+
+                window.addEventListener('blur', markAppDetected);
+                document.addEventListener('visibilitychange', markAppDetected);
+
+                // Coba luncurkan WhatsApp Desktop via hidden iframe & direct assign
+                const iframe = document.createElement('iframe');
+                iframe.style.display = 'none';
+                iframe.src = waDesktopUrl;
+                document.body.appendChild(iframe);
+
+                try {
+                    window.location.assign(waDesktopUrl);
+                } catch (assignErr) {}
+
+                // Evaluasi dalam 1.8 detik: jika window tidak blur / document.hidden false
+                // (artinya WhatsApp Desktop tidak ada di laptop), buka WhatsApp Web!
+                setTimeout(function() {
+                    try {
+                        if (document.body.contains(iframe)) {
+                            document.body.removeChild(iframe);
+                        }
+                    } catch (e) {}
+
+                    window.removeEventListener('blur', markAppDetected);
+                    document.removeEventListener('visibilitychange', markAppDetected);
+
+                    if (!desktopAppDetected && !document.hidden) {
+                        console.log('WhatsApp Desktop tidak terpasang. Membuka WhatsApp Web...');
+                        window.open(waWebUrl, '_blank');
+                    }
+                }, 1800);
+
+                closeWhatsAppReceiptDialog();
+                sendBtn.disabled = false;
+                sendBtn.innerHTML = originalBtnHtml;
+
+                // Tampilkan modal panduan dengan tombol pintasan desktop & web
+                const toastTitle = document.getElementById('waSuccessToastTitle');
+                if (toastTitle) toastTitle.innerText = 'Menghubungkan ke WhatsApp...';
+
+                const toastMsg = document.getElementById('waSuccessToastMessage');
+                if (toastMsg) {
+                    toastMsg.innerHTML = 'Sistem mencoba membuka <strong>WhatsApp Desktop</strong>. Jika WhatsApp Desktop tidak terpasang di laptop, <strong>WhatsApp Web</strong> akan terbuka otomatis.';
+                }
+
+                const btnDirectDesktop = document.getElementById('btnDirectWaDesktop');
+                if (btnDirectDesktop) {
+                    btnDirectDesktop.href = waDesktopUrl;
+                }
+
+                const btnDirectWeb = document.getElementById('btnDirectWaWeb');
+                if (btnDirectWeb) {
+                    btnDirectWeb.href = waWebUrl;
+                }
+
+                document.getElementById('waSuccessToastModal').classList.remove('hidden');
+            }, 'image/png');
+
         } catch (err) {
-            console.warn("Bluetooth Print notice:", err);
-            if (err.name === 'NotFoundError' || (err.message && err.message.toLowerCase().includes('user cancelled'))) {
-                return;
-            }
-            if (confirm("Koneksi Bluetooth tidak merespons: " + (err.message || "Gagal menghubungkan") + ".\n\nBuka dialog cetak sistem biasa?")) {
-                window.print();
-            }
+            alert('Kendala memproses foto struk: ' + err.message);
+            sendBtn.disabled = false;
+            sendBtn.innerHTML = originalBtnHtml;
         }
     }
 
-    async function handlePrint() {
-        const isMobile = /Android|iPhone|iPad|iPod|webOS|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-        const savedMode = localStorage.getItem('receipt_print_mode');
-
-        // Jika mode tersimpan sudah ditentukan pengguna
-        if (savedMode === 'bluetooth') {
-            await printViaBluetooth();
-            return;
-        } else if (savedMode === 'system') {
-            window.print();
-            return;
+    document.addEventListener('DOMContentLoaded', function() {
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('auto_wa') === '1') {
+            openWhatsAppReceiptDialog();
         }
+    });
 
-        // Jika belum ada preferensi tersimpan:
-        if (isMobile) {
-            // Pada HP / Tablet Android default langsung coba Bluetooth
-            if (navigator.bluetooth) {
-                await printViaBluetooth();
-            } else {
-                window.print();
-            }
-        } else {
-            // Pada Laptop / Komputer Desktop:
-            // Jika browser mendukung Web Bluetooth (Chrome / Edge), tampilkan pilihan agar pengguna tahu bisa langsung Bluetooth tanpa driver atau pakai USB
-            if (navigator.bluetooth) {
-                openPrintModeModal();
-            } else {
-                window.print();
-            }
+    document.getElementById('whatsappReceiptModal')?.addEventListener('click', function(e) {
+        if (e.target === this) closeWhatsAppReceiptDialog();
+    });
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            closeWhatsAppReceiptDialog();
+            document.getElementById('waSuccessToastModal')?.classList.add('hidden');
         }
-    }
+    });
 </script>
 @endpush
+@endsection
